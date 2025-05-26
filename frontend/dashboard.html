@@ -1,0 +1,653 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - ImmigraAssist</title>
+    <link rel="stylesheet" href="styles/main.css?v=1.1">
+    <link rel="stylesheet" href="styles/custom.css">
+    <link rel="stylesheet" href="styles/dashboard.css?v=1.1">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="js/api.js"></script>
+    <script src="js/uscis-updates.js"></script>
+    <script src="js/document-upload.js"></script>
+    <script>
+        // JavaScript for document upload functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Visa type selection - toggle document checklists
+            const h1bRadio = document.getElementById('h1b');
+            const l1Radio = document.getElementById('l1');
+            const h1bChecklist = document.getElementById('h1b-checklist');
+            const l1Checklist = document.getElementById('l1-checklist');
+            
+            // Add event listeners to radio buttons
+            h1bRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    h1bChecklist.style.display = 'block';
+                    l1Checklist.style.display = 'none';
+                }
+            });
+            
+            l1Radio.addEventListener('change', function() {
+                if (this.checked) {
+                    h1bChecklist.style.display = 'none';
+                    l1Checklist.style.display = 'block';
+                }
+            });
+            
+            // Check if user is logged in when page loads
+            const checkAuth = function() {
+                if (window.immigraAPI) {
+                    // Check if user is logged in
+                    if (!window.immigraAPI.auth.isLoggedIn()) {
+                        // Redirect to login page if not logged in
+                        window.location.href = 'login.html';
+                    } else {
+                        // User is logged in, update the user name in the header
+                        const userInfo = window.immigraAPI.auth.getCurrentUser();
+                        if (userInfo && userInfo.firstName) {
+                            document.getElementById('user-name').textContent = userInfo.firstName;
+                        }
+                    }
+                } else {
+                    // If immigraAPI is not loaded yet, wait a bit and try again
+                    setTimeout(checkAuth, 100);
+                }
+            };
+            
+            // Start the auth check process
+            checkAuth();
+            
+            // Setup logout button
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.immigraAPI && window.immigraAPI.auth) {
+                    window.immigraAPI.auth.logout();
+                    window.location.href = 'index.html';
+                }
+            });
+        });
+    </script>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">
+                <a href="index.html">
+                    <div class="logo-top">
+                        <div class="logo-container">
+                            <div class="logo-icon"><i class="fas fa-globe-americas"></i></div>
+                            <div class="logo-content">
+                                <div class="logo-text">ImmigraAssist</div>
+                            </div>
+                        </div>
+                        <div class="logo-tagline">Empowering Immigration with Intelligence</div>
+                    </div>
+                    <div class="vg-logo-container">
+                        <img src="images/vg_logo.png" alt="VG Group Logo" class="vg-logo-img">
+                        <div class="vg-text">A V GROUP INITIATIVE</div>
+                    </div>
+                </a>
+            </div>
+            <div class="nav-links">
+                <a href="index.html">Home</a>
+                <a href="services.html">Services</a>
+                <a href="dashboard.html" class="active">Dashboard</a>
+                <a href="about.html">About</a>
+                <a href="contact.html">Contact</a>
+            </div>
+            <div class="auth-buttons">
+                <a href="#" class="btn-login" id="logout-btn">Logout</a>
+            </div>
+            <div class="hamburger">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+        </nav>
+    </header>
+
+    <main class="dashboard-container">
+        <!-- News Ticker for USCIS Updates -->
+        <div class="news-ticker-container">
+            <div class="ticker-label"><i class="fas fa-bullhorn"></i> USCIS Updates:</div>
+            <div class="ticker-content">
+                <div class="ticker-items">
+                    <!-- Dynamic content will be inserted here by uscis-updates.js -->
+                    <span>Loading USCIS updates...</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="dashboard-content">
+            <!-- Left Section: Visa Application Processing -->
+            <div class="visa-processing-section">
+                <div class="section-header">
+                    <h2>Visa Application Processing</h2>
+                    <p>Upload documents and check your visa eligibility</p>
+                </div>
+
+                <!-- Visa Type Selection -->
+                <div class="visa-type-selection">
+                    <h3>Select Visa Type</h3>
+                    <div class="visa-options">
+                        <div class="visa-option" id="h1b-visa">
+                            <input type="radio" id="h1b" name="visa-type" value="h1b" checked>
+                            <label for="h1b">
+                                <div class="visa-icon"><i class="fas fa-user-tie"></i></div>
+                                <div class="visa-details">
+                                    <h4>H-1B Visa</h4>
+                                    <p>Specialty Occupation</p>
+                                </div>
+                            </label>
+                        </div>
+                        <div class="visa-option" id="l1-visa">
+                            <input type="radio" id="l1" name="visa-type" value="l1">
+                            <label for="l1">
+                                <div class="visa-icon"><i class="fas fa-building"></i></div>
+                                <div class="visa-details">
+                                    <h4>L-1 Visa</h4>
+                                    <p>Intracompany Transfer</p>
+                                </div>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Document Checklist -->
+                <div class="document-checklist">
+                    <div class="document-header-actions">
+                        <div>
+                            <h3>Top 5 Required Documents</h3>
+                            <p class="document-intro">These are the most critical documents needed for your visa application.</p>
+                        </div>
+                        <button id="bulk-upload-button" class="btn-secondary bulk-upload-btn">
+                            <i class="fas fa-cloud-upload-alt"></i> Bulk Upload
+                        </button>
+                    </div>
+                    
+                    <!-- H1B Documents - Top 5 most important -->
+                    <div class="checklist-container" id="h1b-checklist">
+                        <!-- Documents will be dynamically populated by document-upload.js -->
+                    </div>
+
+                    <!-- L1 Documents - Top 5 most important -->
+                    <div class="checklist-container" id="l1-checklist" style="display: none;">
+                        <!-- Documents will be dynamically populated by document-upload.js -->
+                    </div>
+
+                    <!-- Document Upload Modal -->
+                    <div id="upload-modal" class="modal">
+                        <div class="modal-content">
+                            <span class="close-modal">&times;</span>
+                            <h3>Upload Document</h3>
+                            <p id="upload-document-type">Document Type: <span>-</span></p>
+                            <div class="upload-area">
+                                <input type="file" id="document-file" accept=".pdf,.jpg,.jpeg,.png">
+                                <label for="document-file">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drag & drop your file here or click to browse</p>
+                                    <span>Supported formats: PDF, JPG, PNG</span>
+                                </label>
+                            </div>
+                            <div class="upload-actions">
+                                <button id="upload-submit" class="btn-primary">Upload Document</button>
+                                <button class="btn-secondary cancel-upload">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Bulk Upload Modal -->
+                    <div id="bulk-upload-modal" class="modal">
+                        <div class="modal-content">
+                            <span class="close-modal">&times;</span>
+                            <h3>Bulk Document Upload</h3>
+                            <div class="bulk-upload-info">
+                                <i class="fas fa-info-circle"></i>
+                                <p>Bulk upload allows you to upload multiple documents at once. The system will automatically categorize them based on content analysis.</p>
+                            </div>
+                            <div class="upload-area">
+                                <input type="file" id="bulk-document-files" accept=".pdf,.jpg,.jpeg,.png" multiple>
+                                <label for="bulk-document-files">
+                                    <i class="fas fa-cloud-upload-alt"></i>
+                                    <p>Drag & drop multiple files here or click to browse</p>
+                                    <span>Up to 10 files (max 50MB total)</span>
+                                </label>
+                            </div>
+                            <div class="bulk-file-list" id="bulk-file-list">
+                                <!-- Files will be listed here -->
+                            </div>
+                            <div class="upload-actions">
+                                <button id="bulk-upload-submit" class="btn-primary">Upload All Documents</button>
+                                <button class="btn-secondary cancel-bulk-upload">Cancel</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Process Application Button -->
+                <div class="process-application">
+                    <button id="process-btn" class="btn-primary btn-large">
+                        <i class="fas fa-cogs"></i> Process Application
+                    </button>
+                    <p class="help-text">Upload all required documents to check eligibility</p>
+                    <div class="document-tips">
+                        <h4><i class="fas fa-lightbulb"></i> Document Tips</h4>
+                        <ul>
+                            <li><strong>Critical</strong> documents are absolutely essential for your application.</li>
+                            <li><strong>High</strong> importance documents significantly strengthen your case.</li>
+                            <li>Upload clear, complete copies of all documents.</li>
+                            <li>Ensure all text is legible and nothing is cut off.</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Section: Application Status and Updates -->
+            <div class="application-status-section">
+                <div class="section-header">
+                    <h2>Application Status</h2>
+                    <span class="status-badge" id="status-badge">Not Started</span>
+                </div>
+
+                <div class="processing-status" id="processing-status">
+                    <div class="status-step completed">
+                        <div class="step-icon"><i class="fas fa-check-circle"></i></div>
+                        <div class="step-details">
+                            <h4>Account Created</h4>
+                            <p>Your ImmigraAssist account is active</p>
+                        </div>
+                    </div>
+                    <div class="status-step" id="document-step">
+                        <div class="step-icon"><i class="fas fa-file-alt"></i></div>
+                        <div class="step-details">
+                            <h4>Document Upload</h4>
+                            <p>Upload all required documents</p>
+                        </div>
+                    </div>
+                    <div class="status-step" id="verification-step">
+                        <div class="step-icon"><i class="fas fa-search"></i></div>
+                        <div class="step-details">
+                            <h4>Document Verification</h4>
+                            <p>OCR extraction and verification</p>
+                        </div>
+                    </div>
+                    <div class="status-step" id="analysis-step">
+                        <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
+                        <div class="step-details">
+                            <h4>Application Analysis</h4>
+                            <p>Evaluating visa eligibility</p>
+                        </div>
+                    </div>
+                    <div class="status-step" id="result-step">
+                        <div class="step-icon"><i class="fas fa-clipboard-check"></i></div>
+                        <div class="step-details">
+                            <h4>Final Results</h4>
+                            <p>Application status and recommendations</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- USCIS Policy Updates -->
+                <div class="policy-updates">
+                    <h3><i class="fas fa-globe-americas"></i> Recent USCIS Policy Updates</h3>
+                    <div class="policy-update-list" id="policy-update-list">
+                        <!-- Dynamic policy updates will be loaded here by uscis-updates.js -->
+                        <div class="policy-update-item loading">
+                            <div class="loading-indicator">
+                                <i class="fas fa-spinner fa-pulse"></i> Loading USCIS updates...
+                            </div>
+                        </div>
+                    </div>
+                    <a href="https://www.uscis.gov/news/all-news" target="_blank" class="view-all-updates">
+                        View All Updates <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+
+                <!-- Result Section (initially hidden) -->
+                <div class="result-container" id="result-container" style="display: none;">
+                    <h3>Application Assessment Results</h3>
+                    <div class="result-summary">
+                        <div class="result-icon" id="result-icon">
+                            <i class="fas fa-spinner fa-pulse"></i>
+                        </div>
+                        <div class="result-details">
+                            <h4 id="result-title">Processing</h4>
+                            <p id="result-description">Your application is being processed...</p>
+                        </div>
+                    </div>
+                    <div class="eligibility-factors">
+                        <h4>Eligibility Factors</h4>
+                        <ul id="eligibility-list">
+                            <!-- Eligibility factors will be added here dynamically -->
+                        </ul>
+                    </div>
+                    <div class="recommendations">
+                        <h4>Recommendations</h4>
+                        <ul id="recommendations-list">
+                            <!-- Recommendations will be added here dynamically -->
+                        </ul>
+                    </div>
+                    <div class="result-actions">
+                        <button class="btn-primary" id="download-report">Download Full Report</button>
+                        <button class="btn-secondary" id="schedule-consultation">Schedule Consultation</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <div class="footer-logo">
+                <a href="index.html">
+                    <div class="logo-container">
+                        <div class="logo-icon"><i class="fas fa-globe-americas"></i></div>
+                        <div class="logo-text">ImmigraAssist</div>
+                    </div>
+                </a>
+                <p>Empowering Immigration with Intelligence</p>
+            </div>
+            <div class="footer-links">
+                <div class="link-group">
+                    <h3>Company</h3>
+                    <a href="about.html">About Us</a>
+                    <a href="team.html">Our Team</a>
+                    <a href="careers.html">Careers</a>
+                    <a href="contact.html">Contact Us</a>
+                </div>
+                <div class="link-group">
+                    <h3>Resources</h3>
+                    <a href="blog.html">Blog</a>
+                    <a href="guides.html">Immigration Guides</a>
+                    <a href="faq.html">FAQ</a>
+                    <a href="support.html">Support</a>
+                </div>
+                <div class="link-group">
+                    <h3>Legal</h3>
+                    <a href="terms.html">Terms of Service</a>
+                    <a href="privacy.html">Privacy Policy</a>
+                    <a href="disclaimer.html">Disclaimer</a>
+                </div>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2025 ImmigraAssist. All rights reserved.</p>
+            <div class="social-links">
+                <a href="#"><i class="fab fa-facebook-f"></i></a>
+                <a href="#"><i class="fab fa-twitter"></i></a>
+                <a href="#"><i class="fab fa-linkedin-in"></i></a>
+                <a href="#"><i class="fab fa-instagram"></i></a>
+            </div>
+        </div>
+    </footer>
+
+    <script src="js/main.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            if (window.immigraAPI && window.immigraAPI.auth) {
+                const isLoggedIn = window.immigraAPI.auth.isLoggedIn();
+                if (!isLoggedIn) {
+                    window.location.href = 'login.html';
+                    return;
+                }
+                
+                // Get user info
+                const userInfo = JSON.parse(localStorage.getItem('user') || '{}');
+                if (userInfo && userInfo.firstName) {
+                    document.getElementById('user-name').textContent = userInfo.firstName;
+                }
+            }
+            
+            // Handle logout
+            document.getElementById('logout-btn').addEventListener('click', function(e) {
+                e.preventDefault();
+                if (window.immigraAPI && window.immigraAPI.auth) {
+                    window.immigraAPI.auth.logout();
+                    window.location.href = 'index.html';
+                }
+            });
+            
+            // Visa type selection
+            const h1bRadio = document.getElementById('h1b');
+            const l1Radio = document.getElementById('l1');
+            const h1bChecklist = document.getElementById('h1b-checklist');
+            const l1Checklist = document.getElementById('l1-checklist');
+            
+            h1bRadio.addEventListener('change', function() {
+                if (this.checked) {
+                    h1bChecklist.style.display = 'flex';
+                    l1Checklist.style.display = 'none';
+                }
+            });
+            
+            l1Radio.addEventListener('change', function() {
+                if (this.checked) {
+                    h1bChecklist.style.display = 'none';
+                    l1Checklist.style.display = 'flex';
+                }
+            });
+            
+            // Document upload modal
+            const modal = document.getElementById('upload-modal');
+            const uploadBtns = document.querySelectorAll('.upload-btn');
+            const closeModal = document.querySelector('.close-modal');
+            const cancelUpload = document.querySelector('.cancel-upload');
+            const uploadDocumentType = document.getElementById('upload-document-type');
+            let currentDocumentId = '';
+            
+            uploadBtns.forEach(btn => {
+                btn.addEventListener('click', function() {
+                    currentDocumentId = this.dataset.document;
+                    uploadDocumentType.querySelector('span').textContent = this.previousElementSibling.textContent;
+                    modal.style.display = 'flex';
+                });
+            });
+            
+            function closeUploadModal() {
+                modal.style.display = 'none';
+                document.getElementById('document-file').value = '';
+            }
+            
+            closeModal.addEventListener('click', closeUploadModal);
+            cancelUpload.addEventListener('click', closeUploadModal);
+            
+            // Close modal when clicking outside
+            window.addEventListener('click', function(e) {
+                if (e.target === modal) {
+                    closeUploadModal();
+                }
+            });
+            
+            // Handle file upload
+            const uploadSubmit = document.getElementById('upload-submit');
+            const documentFile = document.getElementById('document-file');
+            
+            uploadSubmit.addEventListener('click', function() {
+                if (!documentFile.files.length) {
+                    alert('Please select a file to upload');
+                    return;
+                }
+                
+                const file = documentFile.files[0];
+                
+                // Here you would normally upload the file to your server
+                // For this demo, we'll simulate a successful upload
+                setTimeout(() => {
+                    // Check the corresponding checkbox
+                    const checkbox = document.getElementById(currentDocumentId);
+                    checkbox.checked = true;
+                    
+                    // Update document step if all documents are uploaded
+                    updateDocumentStep();
+                    
+                    // Close the modal
+                    closeUploadModal();
+                    
+                    // Show success message
+                    alert(`${file.name} uploaded successfully!`);
+                }, 1500);
+            });
+            
+            // Process application
+            const processBtn = document.getElementById('process-btn');
+            const statusBadge = document.getElementById('status-badge');
+            const documentStep = document.getElementById('document-step');
+            const verificationStep = document.getElementById('verification-step');
+            const analysisStep = document.getElementById('analysis-step');
+            const resultStep = document.getElementById('result-step');
+            const resultContainer = document.getElementById('result-container');
+            
+            function updateDocumentStep() {
+                let allUploaded = true;
+                
+                // Check which visa type is selected
+                const selectedVisa = document.querySelector('input[name="visa-type"]:checked').value;
+                const checklistItems = document.querySelectorAll(`#${selectedVisa}-checklist .checklist-checkbox`);
+                
+                checklistItems.forEach(checkbox => {
+                    if (!checkbox.checked) {
+                        allUploaded = false;
+                    }
+                });
+                
+                if (allUploaded) {
+                    documentStep.classList.add('completed');
+                    processBtn.disabled = false;
+                    processBtn.classList.remove('disabled');
+                } else {
+                    documentStep.classList.remove('completed');
+                    processBtn.disabled = true;
+                    processBtn.classList.add('disabled');
+                }
+            }
+            
+            // Initialize document step
+            updateDocumentStep();
+            
+            // Handle visa type change
+            h1bRadio.addEventListener('change', updateDocumentStep);
+            l1Radio.addEventListener('change', updateDocumentStep);
+            
+            // Process application
+            processBtn.addEventListener('click', function() {
+                if (this.disabled) {
+                    return;
+                }
+                
+                // Update status badge
+                statusBadge.textContent = 'Processing';
+                statusBadge.className = 'status-badge processing';
+                
+                // Start document verification
+                verificationStep.classList.add('in-progress');
+                
+                // Simulate OCR and document verification
+                setTimeout(() => {
+                    // Document verification complete
+                    verificationStep.classList.remove('in-progress');
+                    verificationStep.classList.add('completed');
+                    
+                    // Start application analysis
+                    analysisStep.classList.add('in-progress');
+                    
+                    // Simulate application analysis
+                    setTimeout(() => {
+                        // Analysis complete
+                        analysisStep.classList.remove('in-progress');
+                        analysisStep.classList.add('completed');
+                        
+                        // Show results
+                        resultStep.classList.add('completed');
+                        
+                        // Update status badge
+                        const selectedVisa = document.querySelector('input[name="visa-type"]:checked').value;
+                        let resultStatus = '';
+                        
+                        if (selectedVisa === 'h1b') {
+                            resultStatus = 'approved';
+                        } else {
+                            resultStatus = 'pending';
+                        }
+                        
+                        statusBadge.textContent = resultStatus === 'approved' ? 'Approved' : 'Pending Review';
+                        statusBadge.className = `status-badge ${resultStatus === 'approved' ? 'approved' : 'pending'}`;
+                        
+                        // Show result container
+                        resultContainer.style.display = 'block';
+                        
+                        // Update result details
+                        const resultIcon = document.getElementById('result-icon');
+                        const resultTitle = document.getElementById('result-title');
+                        const resultDescription = document.getElementById('result-description');
+                        const eligibilityList = document.getElementById('eligibility-list');
+                        const recommendationsList = document.getElementById('recommendations-list');
+                        
+                        resultIcon.innerHTML = resultStatus === 'approved' 
+                            ? '<i class="fas fa-check-circle"></i>' 
+                            : '<i class="fas fa-exclamation-triangle"></i>';
+                        resultIcon.className = `result-icon ${resultStatus === 'approved' ? 'success' : 'warning'}`;
+                        
+                        resultTitle.textContent = resultStatus === 'approved' 
+                            ? 'Application Approved' 
+                            : 'Additional Review Required';
+                            
+                        resultDescription.textContent = resultStatus === 'approved'
+                            ? 'Based on our analysis, your application meets the eligibility criteria for the selected visa category.'
+                            : 'Your application requires additional review due to some eligibility factors. Please see details below.';
+                            
+                        // Add eligibility factors
+                        eligibilityList.innerHTML = '';
+                        if (selectedVisa === 'h1b') {
+                            eligibilityList.innerHTML += '<li>Educational qualifications match specialty occupation requirements</li>';
+                            eligibilityList.innerHTML += '<li>Wage meets prevailing wage requirements</li>';
+                            eligibilityList.innerHTML += '<li>Position qualifies as a specialty occupation</li>';
+                            eligibilityList.innerHTML += '<li>Employer-employee relationship is established</li>';
+                        } else {
+                            eligibilityList.innerHTML += '<li>One year of employment with foreign entity established</li>';
+                            eligibilityList.innerHTML += '<li>Position qualifies for L-1 classification</li>';
+                            eligibilityList.innerHTML += '<li><span style="color: #856404;">Additional documentation recommended for qualifying relationship between entities</span></li>';
+                        }
+                        
+                        // Add recommendations
+                        recommendationsList.innerHTML = '';
+                        if (selectedVisa === 'h1b') {
+                            recommendationsList.innerHTML += '<li>Ensure LCA is posted at worksite</li>';
+                            recommendationsList.innerHTML += '<li>Prepare for potential RFE regarding specialty occupation</li>';
+                            recommendationsList.innerHTML += '<li>Consider premium processing for faster adjudication</li>';
+                        } else {
+                            recommendationsList.innerHTML += '<li>Submit additional evidence of qualifying relationship between entities</li>';
+                            recommendationsList.innerHTML += '<li>Provide more detailed job descriptions for both positions</li>';
+                            recommendationsList.innerHTML += '<li>Include organizational charts for both companies</li>';
+                        }
+                    }, 3000); // Analysis time simulation
+                }, 2000); // Verification time simulation
+            });
+        });
+    </script>
+    
+    <script>
+        // Document checklist toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const h1bRadio = document.getElementById('h1b');
+            const l1Radio = document.getElementById('l1');
+            const h1bChecklist = document.getElementById('h1b-checklist');
+            const l1Checklist = document.getElementById('l1-checklist');
+            
+            // Add event listeners to radio buttons
+            h1bRadio.addEventListener('click', function() {
+                h1bChecklist.style.display = 'block';
+                l1Checklist.style.display = 'none';
+                console.log('H1B selected');
+            });
+            
+            l1Radio.addEventListener('click', function() {
+                h1bChecklist.style.display = 'none';
+                l1Checklist.style.display = 'block';
+                console.log('L1 selected');
+            });
+        });
+    </script>
+</body>
+</html>
