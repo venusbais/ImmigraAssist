@@ -1,0 +1,378 @@
+{% extends "attorney_base.html" %}
+
+{% block title %}Clients - Attorney Corner{% endblock %}
+
+{% block attorney_content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Client Management</h2>
+        <a href="#" class="btn btn-primary" data-toggle="modal" data-target="#addClientModal">
+            <i class="fas fa-plus"></i> Add New Client
+        </a>
+    </div>
+    <div class="card-body">
+        <div class="filter-controls">
+            <select id="status-filter" class="form-control">
+                <option value="all">All Clients</option>
+                <option value="active">Active Clients</option>
+                <option value="inactive">Inactive Clients</option>
+            </select>
+            <div class="search-box">
+                <i class="fas fa-search"></i>
+                <input type="text" id="search-client" placeholder="Search clients...">
+            </div>
+        </div>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Client ID</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Cases</th>
+                    <th>Status</th>
+                    <th>Last Contact</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for client in clients %}
+                <tr class="client-row" data-status="{{ client.status|lower }}">
+                    <td>#{{ client.id }}</td>
+                    <td>{{ client.firstname }} {{ client.lastname }}</td>
+                    <td>{{ client.email }}</td>
+                    <td>{{ client.phone|default('-') }}</td>
+                    <td>{{ client.cases|length }}</td>
+                    <td>
+                        {% if client.status == 'active' %}
+                        <span class="status-badge status-approved">Active</span>
+                        {% else %}
+                        <span class="status-badge status-rejected">Inactive</span>
+                        {% endif %}
+                    </td>
+                    <td>{{ client.join_date if client.join_date else 'Never' }}</td>
+                    <td>
+                        <div class="action-menu">
+                            <button class="btn btn-sm btn-secondary dropdown-toggle">
+                                <i class="fas fa-ellipsis-v"></i>
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="#" class="dropdown-item" data-toggle="modal" data-target="#viewClientModal{{ client.id }}">
+                                    <i class="fas fa-eye"></i> View Details
+                                </a>
+                                <a href="#" class="dropdown-item" data-toggle="modal" data-target="#editClientModal{{ client.id }}">
+                                    <i class="fas fa-edit"></i> Edit Client
+                                </a>
+                                <a href="{{ url_for('attorney_cases') }}?client_id={{ client.id }}" class="dropdown-item">
+                                    <i class="fas fa-folder-open"></i> View Cases
+                                </a>
+                                <a href="#" class="dropdown-item">
+                                    <i class="fas fa-envelope"></i> Send Email
+                                </a>
+                                <a href="#" class="dropdown-item client-status-toggle" data-client-id="{{ client.id }}" data-status="{{ 'inactive' if client.status == 'active' else 'active' }}">
+                                    <i class="fas fa-{{ 'ban' if client.status == 'active' else 'check-circle' }}"></i> 
+                                    {{ 'Mark Inactive' if client.status == 'active' else 'Mark Active' }}
+                                </a>
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        
+        <div class="pagination">
+            <span class="pagination-info">Showing {{ clients|length }} of {{ total_clients }} clients</span>
+            <div class="pagination-controls">
+                {% if page > 1 %}
+                <a href="{{ url_for('attorney_clients', page=page-1) }}" class="btn btn-secondary">Previous</a>
+                {% endif %}
+                
+                {% if has_next %}
+                <a href="{{ url_for('attorney_clients', page=page+1) }}" class="btn btn-secondary">Next</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Client Modal -->
+<div class="modal" id="addClientModal">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Client</h3>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="add-client-form" method="post" action="{{ url_for('add_client') }}">
+                    <div class="form-group">
+                        <label for="firstname">First Name</label>
+                        <input type="text" id="firstname" name="firstname" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastname">Last Name</label>
+                        <input type="text" id="lastname" name="lastname" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">Email Address</label>
+                        <input type="email" id="email" name="email" class="form-control" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input type="tel" id="phone" name="phone" class="form-control">
+                    </div>
+                    <div class="form-group">
+                        <label for="address">Address</label>
+                        <textarea id="address" name="address" class="form-control" rows="3"></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes">Notes</label>
+                        <textarea id="notes" name="notes" class="form-control" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button form="add-client-form" type="submit" class="btn btn-primary">Add Client</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Client Detail Modal Templates -->
+{% for client in clients %}
+<!-- View Client Modal -->
+<div class="modal" id="viewClientModal{{ client.id }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Client Details</h3>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="client-details">
+                    <div class="client-header">
+                        <h4>{{ client.firstname }} {{ client.lastname }}</h4>
+                        <span class="status-badge status-{{ 'approved' if client.status == 'active' else 'rejected' }}">
+                            {{ client.status|capitalize }}
+                        </span>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h5>Contact Information</h5>
+                        <div class="detail-item">
+                            <span class="detail-label">Email:</span>
+                            <span class="detail-value">{{ client.email }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Phone:</span>
+                            <span class="detail-value">{{ client.phone|default('Not provided') }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Address:</span>
+                            <span class="detail-value">{{ client.address|default('Not provided')|nl2br }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h5>Case Information</h5>
+                        <div class="detail-item">
+                            <span class="detail-label">Total Cases:</span>
+                            <span class="detail-value">{{ client.cases|length }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Active Cases:</span>
+                            <span class="detail-value">{{ client.active_cases|default(0) }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Last Contact:</span>
+                            <span class="detail-value">{{ client.last_contact.strftime('%Y-%m-%d') if client.last_contact else 'Never' }}</span>
+                        </div>
+                    </div>
+                    
+                    {% if client.notes %}
+                    <div class="detail-section">
+                        <h5>Notes</h5>
+                        <div class="notes-box">
+                            {{ client.notes|nl2br }}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <a href="#" class="btn btn-primary" data-toggle="modal" data-target="#editClientModal{{ client.id }}" data-dismiss="modal">
+                    Edit Client
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Edit Client Modal -->
+<div class="modal" id="editClientModal{{ client.id }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Client</h3>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="edit-client-form-{{ client.id }}" method="post" action="{{ url_for('edit_client', client_id=client.id) }}">
+                    <div class="form-group">
+                        <label for="firstname-{{ client.id }}">First Name</label>
+                        <input type="text" id="firstname-{{ client.id }}" name="firstname" class="form-control" value="{{ client.firstname }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="lastname-{{ client.id }}">Last Name</label>
+                        <input type="text" id="lastname-{{ client.id }}" name="lastname" class="form-control" value="{{ client.lastname }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="email-{{ client.id }}">Email Address</label>
+                        <input type="email" id="email-{{ client.id }}" name="email" class="form-control" value="{{ client.email }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="phone-{{ client.id }}">Phone Number</label>
+                        <input type="tel" id="phone-{{ client.id }}" name="phone" class="form-control" value="{{ client.phone|default('') }}">
+                    </div>
+                    <div class="form-group">
+                        <label for="address-{{ client.id }}">Address</label>
+                        <textarea id="address-{{ client.id }}" name="address" class="form-control" rows="3">{{ client.address|default('') }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="notes-{{ client.id }}">Notes</label>
+                        <textarea id="notes-{{ client.id }}" name="notes" class="form-control" rows="3">{{ client.notes|default('') }}</textarea>
+                    </div>
+                    <div class="form-group">
+                        <label for="status-{{ client.id }}">Status</label>
+                        <select id="status-{{ client.id }}" name="status" class="form-control">
+                            <option value="active" {% if client.status == 'active' %}selected{% endif %}>Active</option>
+                            <option value="inactive" {% if client.status == 'inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                <button form="edit-client-form-{{ client.id }}" type="submit" class="btn btn-primary">Save Changes</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Client filtering
+    const statusFilter = document.getElementById('status-filter');
+    const searchInput = document.getElementById('search-client');
+    const clientRows = document.querySelectorAll('.client-row');
+    
+    function filterClients() {
+        const statusValue = statusFilter.value;
+        const searchValue = searchInput.value.toLowerCase();
+        
+        clientRows.forEach(row => {
+            const rowStatus = row.getAttribute('data-status');
+            const name = row.cells[1].textContent.toLowerCase();
+            const email = row.cells[2].textContent.toLowerCase();
+            const phone = row.cells[3].textContent.toLowerCase();
+            
+            const statusMatch = statusValue === 'all' || 
+                (statusValue === 'active' && rowStatus === 'active') || 
+                (statusValue === 'inactive' && rowStatus === 'inactive');
+                
+            const searchMatch = searchValue === '' || 
+                name.includes(searchValue) || 
+                email.includes(searchValue) || 
+                phone.includes(searchValue);
+            
+            if (statusMatch && searchMatch) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+    }
+    
+    if (statusFilter) statusFilter.addEventListener('change', filterClients);
+    if (searchInput) searchInput.addEventListener('input', filterClients);
+    
+    // Toggle client status
+    const statusToggles = document.querySelectorAll('.client-status-toggle');
+    statusToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const clientId = this.getAttribute('data-client-id');
+            const newStatus = this.getAttribute('data-status');
+            
+            if (confirm(`Are you sure you want to mark this client as ${newStatus}?`)) {
+                fetch(`/attorney/toggle-client-status/${clientId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        window.location.reload();
+                    } else {
+                        alert('Failed to update client status: ' + data.message);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred while updating client status');
+                });
+            }
+        });
+    });
+    
+    // Modal functionality
+    const modals = document.querySelectorAll('.modal');
+    const closeButtons = document.querySelectorAll('.modal .close, .modal .btn-secondary');
+    const modalToggles = document.querySelectorAll('[data-toggle="modal"]');
+    
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+        }
+    }
+    
+    function closeModal(modal) {
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+    
+    modalToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetModal = this.getAttribute('data-target').substring(1);
+            openModal(targetModal);
+        });
+    });
+    
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            closeModal(modal);
+        });
+    });
+    
+    window.addEventListener('click', function(e) {
+        modals.forEach(modal => {
+            if (e.target === modal) {
+                closeModal(modal);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

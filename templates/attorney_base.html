@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Attorney Corner{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/main.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/custom.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/dashboard.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles/attorney.css') }}">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <script src="{{ url_for('static', filename='js/api.js') }}"></script>
+    <script src="{{ url_for('static', filename='js/attorney.js') }}"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <header>
+        <nav class="navbar">
+            <div class="container">
+                <a href="{{ url_for('index') }}" class="logo">ImmigraAssist</a>
+                <div class="nav-right">
+                    {% if session.logged_in %}
+                        <div class="dropdown">
+                            <button class="dropdown-toggle">
+                                <i class="fas fa-user-circle"></i>
+                                {% if session.attorney_name %}
+                                    {{ session.attorney_name }}
+                                {% else %}
+                                    Account
+                                {% endif %}
+                            </button>
+                            <div class="dropdown-menu">
+                                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+                                {% if session.is_admin %}
+                                    <a href="{{ url_for('admin') }}">Admin Panel</a>
+                                {% endif %}
+                                {% if session.is_attorney %}
+                                    <a href="{{ url_for('attorney') }}">Attorney Corner</a>
+                                {% endif %}
+                                <a href="{{ url_for('logout') }}">Logout</a>
+                            </div>
+                        </div>
+                    {% else %}
+                        <a href="{{ url_for('login') }}" class="btn btn-primary">Login</a>
+                        <a href="{{ url_for('signup') }}" class="btn btn-outline">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <div class="attorney-dashboard">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h3><i class="fas fa-gavel"></i> Attorney Corner</h3>
+            </div>
+            <button id="mobile-menu-toggle" class="mobile-menu-toggle">
+                <i class="fas fa-bars"></i>
+            </button>
+            <ul class="sidebar-menu">
+                <li>
+                    <a href="{{ url_for('attorney') }}" {% if request.path == url_for('attorney') %}class="active"{% endif %}>
+                        <i class="fas fa-tachometer-alt"></i> Dashboard
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_cases') }}" {% if request.path == url_for('attorney_cases') %}class="active"{% endif %}>
+                        <i class="fas fa-folder-open"></i> Cases
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_clients') }}" {% if request.path == url_for('attorney_clients') %}class="active"{% endif %}>
+                        <i class="fas fa-users"></i> Clients
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_forms') }}" {% if request.path == url_for('attorney_forms') %}class="active"{% endif %}>
+                        <i class="fas fa-file-alt"></i> Immigration Forms
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_documents') }}" {% if request.path == url_for('attorney_documents') %}class="active"{% endif %}>
+                        <i class="fas fa-file-pdf"></i> Documents
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_calendar') }}" {% if request.path == url_for('attorney_calendar') %}class="active"{% endif %}>
+                        <i class="fas fa-calendar-alt"></i> Calendar
+                    </a>
+                </li>
+                <li>
+                    <a href="{{ url_for('attorney_settings') }}" {% if request.path == url_for('attorney_settings') %}class="active"{% endif %}>
+                        <i class="fas fa-cog"></i> Settings
+                    </a>
+                </li>
+            </ul>
+        </div>
+        
+        <div class="main-content">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }}">
+                            {{ message }}
+                            <button class="alert-close">&times;</button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            {% block attorney_content %}{% endblock %}
+        </div>
+    </div>
+
+    <script>
+        // Handle alert dismissal
+        document.querySelectorAll('.alert-close').forEach(button => {
+            button.addEventListener('click', function() {
+                this.parentElement.style.display = 'none';
+            });
+        });
+
+        // Handle dropdown menu
+        const dropdownToggle = document.querySelector('.dropdown-toggle');
+        if (dropdownToggle) {
+            dropdownToggle.addEventListener('click', function() {
+                this.nextElementSibling.classList.toggle('show');
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function(event) {
+                if (!event.target.matches('.dropdown-toggle') && !event.target.closest('.dropdown-toggle')) {
+                    document.querySelectorAll('.dropdown-menu').forEach(menu => {
+                        menu.classList.remove('show');
+                    });
+                }
+            });
+        }
+    </script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

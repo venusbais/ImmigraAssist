@@ -1,0 +1,216 @@
+{% extends "attorney_base.html" %}
+
+{% block title %}Immigration Forms - Attorney Corner{% endblock %}
+
+{% block attorney_content %}
+<div class="card">
+    <div class="card-header">
+        <h2>Immigration Forms Library</h2>
+        <div class="search-box">
+            <i class="fas fa-search"></i>
+            <input type="text" id="search-form" placeholder="Search forms...">
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="filter-controls">
+            <select id="category-filter" class="form-control">
+                <option value="all">All Categories</option>
+                <option value="family">Family-Based</option>
+                <option value="employment">Employment-Based</option>
+                <option value="naturalization">Naturalization</option>
+                <option value="asylum">Asylum & Refugee</option>
+                <option value="adjustment">Adjustment of Status</option>
+                <option value="nonimmigrant">Nonimmigrant Visas</option>
+                <option value="other">Other Forms</option>
+            </select>
+        </div>
+
+        <div class="form-list">
+            {% for form in immigration_forms %}
+            <div class="form-item" data-category="{{ form.category }}">
+                <div class="form-item-header">
+                    <i class="fas fa-file-alt"></i> {{ form.name }}
+                </div>
+                <div class="form-code">{{ form.code }}</div>
+                <div class="form-item-description">{{ form.description }}</div>
+                <div class="form-meta">
+                    <span class="form-edition">Edition Date: {{ form.edition_date }}</span>
+                    <span class="form-fee">Filing Fee: ${{ form.fee }}</span>
+                </div>
+                <div class="action-buttons">
+                    <a href="{{ form.pdf_url }}" target="_blank" class="btn btn-primary btn-sm">
+                        <i class="fas fa-download"></i> Download
+                    </a>
+                    <a href="#" class="btn btn-secondary btn-sm" data-toggle="modal" data-target="#formInfoModal{{ loop.index }}">
+                        <i class="fas fa-info-circle"></i> Details
+                    </a>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        {% if immigration_forms|length == 0 %}
+        <div class="empty-state">
+            <i class="fas fa-file-alt empty-icon"></i>
+            <h3>No forms available</h3>
+            <p>There are no immigration forms in the system yet.</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Form Information Modals -->
+{% for form in immigration_forms %}
+<div class="modal" id="formInfoModal{{ loop.index }}">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>{{ form.code }}: {{ form.name }}</h3>
+                <button class="close" data-dismiss="modal">&times;</button>
+            </div>
+            <div class="modal-body">
+                <div class="form-details">
+                    <div class="detail-section">
+                        <h5>Form Information</h5>
+                        <div class="detail-item">
+                            <span class="detail-label">Category:</span>
+                            <span class="detail-value">{{ form.category|capitalize }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Edition Date:</span>
+                            <span class="detail-value">{{ form.edition_date }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Expiration Date:</span>
+                            <span class="detail-value">{{ form.expiration_date }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Pages:</span>
+                            <span class="detail-value">{{ form.pages }}</span>
+                        </div>
+                        <div class="detail-item">
+                            <span class="detail-label">Filing Fee:</span>
+                            <span class="detail-value">${{ form.fee }}</span>
+                        </div>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h5>Description</h5>
+                        <p>{{ form.description }}</p>
+                    </div>
+                    
+                    <div class="detail-section">
+                        <h5>Filing Instructions</h5>
+                        <div class="instructions-box">
+                            {{ form.instructions|safe }}
+                        </div>
+                    </div>
+                    
+                    {% if form.supporting_documents %}
+                    <div class="detail-section">
+                        <h5>Supporting Documents</h5>
+                        <ul class="supporting-docs-list">
+                            {% for doc in form.supporting_documents %}
+                            <li>{{ doc }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="detail-section">
+                        <h5>Where to File</h5>
+                        <p>{{ form.filing_location }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" data-dismiss="modal">Close</button>
+                <a href="{{ form.pdf_url }}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-download"></i> Download Form
+                </a>
+                <a href="{{ form.instructions_url }}" target="_blank" class="btn btn-secondary">
+                    <i class="fas fa-file-pdf"></i> Instructions
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Form filtering
+    const categoryFilter = document.getElementById('category-filter');
+    const searchInput = document.getElementById('search-form');
+    const formItems = document.querySelectorAll('.form-item');
+    
+    function filterForms() {
+        const categoryValue = categoryFilter.value;
+        const searchValue = searchInput.value.toLowerCase();
+        
+        formItems.forEach(item => {
+            const itemCategory = item.getAttribute('data-category');
+            const formName = item.querySelector('.form-item-header').textContent.toLowerCase();
+            const formCode = item.querySelector('.form-code').textContent.toLowerCase();
+            const formDescription = item.querySelector('.form-item-description').textContent.toLowerCase();
+            
+            const categoryMatch = categoryValue === 'all' || itemCategory === categoryValue;
+            const searchMatch = searchValue === '' || 
+                formName.includes(searchValue) || 
+                formCode.includes(searchValue) || 
+                formDescription.includes(searchValue);
+            
+            if (categoryMatch && searchMatch) {
+                item.style.display = '';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    
+    if (categoryFilter) categoryFilter.addEventListener('change', filterForms);
+    if (searchInput) searchInput.addEventListener('input', filterForms);
+    
+    // Modal functionality
+    const modals = document.querySelectorAll('.modal');
+    const closeButtons = document.querySelectorAll('.modal .close, .modal .btn-secondary[data-dismiss="modal"]');
+    const modalToggles = document.querySelectorAll('[data-toggle="modal"]');
+    
+    function openModal(modalId) {
+        const modal = document.getElementById(modalId);
+        if (modal) {
+            modal.style.display = 'block';
+            document.body.classList.add('modal-open');
+        }
+    }
+    
+    function closeModal(modal) {
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+    }
+    
+    modalToggles.forEach(toggle => {
+        toggle.addEventListener('click', function(e) {
+            e.preventDefault();
+            const targetModal = this.getAttribute('data-target').substring(1);
+            openModal(targetModal);
+        });
+    });
+    
+    closeButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const modal = this.closest('.modal');
+            closeModal(modal);
+        });
+    });
+    
+    window.addEventListener('click', function(e) {
+        modals.forEach(modal => {
+            if (e.target === modal) {
+                closeModal(modal);
+            }
+        });
+    });
+});
+</script>
+{% endblock %}
