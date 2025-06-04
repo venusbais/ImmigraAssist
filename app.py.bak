@@ -86,27 +86,6 @@ def get_document_icon(doc_type):
 def index():
     return render_template('index.html')
 
-@app.route('/attorney/login', methods=['GET', 'POST'])
-def attorney_login():
-    if request.method == 'POST':
-        email = request.form['email']
-        password = request.form['password']
-
-        # Query user by email
-        user = User.query.filter_by(email=email).first()
-
-        if user and check_password_hash(user.password, password) and user.role == 'attorney':
-            session['logged_in'] = True
-            session['user_id'] = user.id
-            session['is_attorney'] = True
-            session['attorney_name'] = f"{user.firstname} {user.lastname}"
-            flash('Login successful!', 'success')
-            return redirect(url_for('attorney'))
-        else:
-            flash('Invalid email or password or insufficient permissions.', 'error')
-
-    return render_template('attorney_login.html')
-
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -388,201 +367,6 @@ def contact():
         return redirect(url_for('contact'))
     return render_template('contact.html')
 
-
-@app.route('/attorney/i129-form/<int:petition_id>', methods=['GET'])
-@attorney_required
-def attorney_i129_form(petition_id):
-    # Get petition details from database
-    petition = Petition.query.join(User).filter(Petition.id == petition_id).first()
-    
-    if not petition:
-        flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
-    
-    # Map the petition state to a user-friendly string
-    state_display = {
-        'approved': 'Approved',
-        'under_review': 'Under Review',
-        'pending': 'Pending',
-        'needs_info': 'Needs Information'
-    }
-    
-    state = state_display.get(petition.state.lower() if petition.state else 'pending', 'Pending')
-    
-    return render_template('attorney_i129_form.html', petition=petition, state=state)
-
-@app.route('/attorney/i140-form/<int:petition_id>', methods=['GET'])
-@attorney_required
-def attorney_i140_form(petition_id):
-    # Get petition details from database
-    petition = Petition.query.join(User).filter(Petition.id == petition_id).first()
-    
-    if not petition:
-        flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
-    
-    # Map the petition state to a user-friendly string
-    state_display = {
-        'approved': 'Approved',
-        'under_review': 'Under Review',
-        'pending': 'Pending',
-        'needs_info': 'Needs Information'
-    }
-    
-    state = state_display.get(petition.state.lower() if petition.state else 'pending', 'Pending')
-    
-    return render_template('attorney_i140_form.html', petition=petition, state=state)
-
-@app.route('/attorney/update-i129/<int:petition_id>', methods=['POST'])
-@attorney_required
-def update_i129_petition(petition_id):
-    petition = Petition.query.get(petition_id)
-    
-    if not petition:
-        flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
-    
-    # Update petition fields from form data
-    # Company/Petitioner Information
-    petition.company_name = request.form.get('company_name', petition.company_name)
-    petition.trade_name = request.form.get('trade_name')
-    petition.street_address = request.form.get('street_address', petition.street_address)
-    petition.apt_ste_flr = request.form.get('apt_ste_flr')
-    petition.city = request.form.get('city', petition.city)
-    petition.state = request.form.get('state', petition.state) # State field conflicts with petition status field
-    petition.zip_code = request.form.get('zip_code', petition.zip_code)
-    petition.country = request.form.get('country', petition.country)
-    petition.fein = request.form.get('fein', petition.fein)
-    petition.email = request.form.get('email', petition.email)
-    petition.daytime_phone = request.form.get('daytime_phone', petition.daytime_phone)
-    petition.mobile_phone = request.form.get('mobile_phone')
-    
-    # Petition Information
-    petition.basis_for_classification = request.form.get('classification', petition.basis_for_classification)
-    petition.petition_type = request.form.get('petition_type', petition.petition_type)
-    petition.lca_number = request.form.get('lca_number', petition.lca_number)
-    petition.requested_start_date = request.form.get('requested_start_date', petition.requested_start_date)
-    petition.requested_end_date = request.form.get('requested_end_date', petition.requested_end_date)
-    
-    # Beneficiary Information
-    petition.beneficiary_family_name = request.form.get('beneficiary_family_name', petition.beneficiary_family_name)
-    petition.beneficiary_given_name = request.form.get('beneficiary_given_name', petition.beneficiary_given_name)
-    petition.beneficiary_middle_name = request.form.get('beneficiary_middle_name')
-    petition.other_family_name = request.form.get('other_family_name')
-    petition.other_given_name = request.form.get('other_given_name')
-    petition.other_middle_name = request.form.get('other_middle_name')
-    petition.birth_date = request.form.get('birth_date', petition.birth_date)
-    petition.gender = request.form.get('gender', petition.gender)
-    petition.country_of_birth = request.form.get('country_of_birth', petition.country_of_birth)
-    petition.country_of_citizenship = request.form.get('country_of_citizenship', petition.country_of_citizenship)
-    petition.alien_number = request.form.get('alien_number')
-    petition.ssn = request.form.get('ssn')
-    petition.passport_number = request.form.get('passport_number', petition.passport_number)
-    petition.passport_expiry_date = request.form.get('passport_expiry_date', petition.passport_expiry_date)
-    petition.foreign_street = request.form.get('foreign_street', petition.foreign_street)
-    petition.foreign_apt = request.form.get('foreign_apt')
-    petition.foreign_city = request.form.get('foreign_city', petition.foreign_city)
-    petition.foreign_state = request.form.get('foreign_state')
-    petition.foreign_postal = request.form.get('foreign_postal')
-    petition.foreign_country = request.form.get('foreign_country', petition.foreign_country)
-    petition.education_qualification = request.form.get('education_qualification', petition.education_qualification)
-    
-    # Employment Information
-    petition.job_title = request.form.get('job_title', petition.job_title)
-    petition.full_time = request.form.get('full_time', petition.full_time)
-    petition.hours_per_week = request.form.get('hours_per_week')
-    petition.wage_amount = request.form.get('wage_amount', petition.wage_amount)
-    petition.wage_period = request.form.get('wage_period', petition.wage_period)
-    petition.work_street_1 = request.form.get('work_street_1', petition.work_street_1)
-    petition.work_apt_1 = request.form.get('work_apt_1')
-    petition.work_city_1 = request.form.get('work_city_1', petition.work_city_1)
-    petition.work_state_1 = request.form.get('work_state_1', petition.work_state_1)
-    petition.work_zip_1 = request.form.get('work_zip_1', petition.work_zip_1)
-    petition.itinerary = request.form.get('itinerary', petition.itinerary)
-    petition.work_offsite = request.form.get('work_offsite', petition.work_offsite)
-    
-    # In a real application, we would commit changes to the database
-    # db.session.commit()
-    
-    flash('I-129 form updated successfully', 'success')
-    return redirect(url_for('attorney_i129_form', petition_id=petition_id))
-
-@app.route('/attorney/update-i140/<int:petition_id>', methods=['POST'])
-@attorney_required
-def update_i140_petition(petition_id):
-    petition = Petition.query.get(petition_id)
-    
-    if not petition:
-        flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
-    
-    # Update petition fields from form data
-    # Basic Information
-    petition.alien_number = request.form.get('alien_number', petition.alien_number)
-    petition.uscis_account = request.form.get('uscis_account', petition.uscis_account)
-    petition.ssn = request.form.get('ssn', petition.ssn)
-    petition.beneficiary_family_name = request.form.get('beneficiary_family_name', petition.beneficiary_family_name)
-    petition.beneficiary_given_name = request.form.get('beneficiary_given_name', petition.beneficiary_given_name)
-    petition.beneficiary_middle_name = request.form.get('beneficiary_middle_name', petition.beneficiary_middle_name)
-    
-    # Other Names
-    other_names_used = request.form.get('other_names_used')
-    if other_names_used == 'yes':
-        petition.other_family_name = request.form.get('other_family_name', petition.other_family_name)
-        petition.other_given_name = request.form.get('other_given_name', petition.other_given_name)
-    else:
-        petition.other_family_name = None
-        petition.other_given_name = None
-    
-    # Personal Information
-    petition.birth_date = request.form.get('birth_date', petition.birth_date)
-    petition.gender = request.form.get('gender', petition.gender)
-    petition.city_of_birth = request.form.get('city_of_birth', petition.city_of_birth)
-    petition.country_of_birth = request.form.get('country_of_birth', petition.country_of_birth)
-    petition.country_of_citizenship = request.form.get('country_of_citizenship', petition.country_of_citizenship)
-    petition.marital_status = request.form.get('marital_status', petition.marital_status)
-    
-    # Application Type
-    petition.adjustment_category = request.form.get('application_type', petition.adjustment_category)
-    petition.receipt_number = request.form.get('receipt_number', petition.receipt_number)
-    petition.priority_date = request.form.get('priority_date', petition.priority_date)
-    
-    # Travel Information
-    petition.last_arrival_date = request.form.get('last_arrival_date', petition.last_arrival_date)
-    petition.i94_number = request.form.get('i94_number', petition.i94_number)
-    petition.current_status = request.form.get('current_status', petition.current_status)
-    petition.status_expires = request.form.get('status_expires', petition.status_expires)
-    petition.passport_number = request.form.get('passport_number', petition.passport_number)
-    petition.passport_expiry_date = request.form.get('passport_expiry_date', petition.passport_expiry_date)
-    
-    # Address Information
-    petition.current_address = request.form.get('current_address', petition.current_address)
-    petition.current_apt = request.form.get('current_apt', petition.current_apt)
-    petition.current_city = request.form.get('current_city', petition.current_city)
-    petition.current_state = request.form.get('current_state', petition.current_state)
-    petition.current_zip = request.form.get('current_zip', petition.current_zip)
-    
-    # Check if mailing address is different
-    if not request.form.get('same_address'):
-        petition.mailing_address = request.form.get('mailing_address', petition.mailing_address)
-        petition.mailing_apt = request.form.get('mailing_apt', petition.mailing_apt)
-        petition.mailing_city = request.form.get('mailing_city', petition.mailing_city)
-        petition.mailing_state = request.form.get('mailing_state', petition.mailing_state)
-        petition.mailing_zip = request.form.get('mailing_zip', petition.mailing_zip)
-    else:
-        # If same address is checked, copy current address to mailing address
-        petition.mailing_address = petition.current_address
-        petition.mailing_apt = petition.current_apt
-        petition.mailing_city = petition.current_city
-        petition.mailing_state = petition.current_state
-        petition.mailing_zip = petition.current_zip
-    
-    # In a real application, we would commit changes to the database
-    # db.session.commit()
-    
-    flash('I-140 form updated successfully', 'success')
-    return redirect(url_for('attorney_i140_form', petition_id=petition_id))
-
 @app.route('/admin')
 @login_required
 @admin_required
@@ -606,87 +390,53 @@ def delete_user(user_id):
 @login_required
 @attorney_required
 def attorney():
-    # Get all petitions with their associated users for the attorney dashboard
-    petitions = Petition.query.join(User, Petition.user_id == User.id).all()
-    
-    # Add completion percentage and eligibility status for each petition
-    for petition in petitions:
-        # Calculate completion percentage based on filled fields
-        filled_fields = 0
-        total_fields = 0
-        for column in petition.__table__.columns:
-            if column.name != 'id' and column.name != 'user_id' and column.name != 'created_at' and column.name != 'updated_at':
-                total_fields += 1
-                if getattr(petition, column.name) is not None and getattr(petition, column.name) != '':
-                    filled_fields += 1
-        
-        petition.completion_percentage = int((filled_fields / total_fields) * 100) if total_fields > 0 else 0
-        
-        # Determine eligibility based on completion percentage
-        petition.is_eligible = petition.completion_percentage >= 90
-        
-        # Set state based on completion percentage if not already set
-        if not hasattr(petition, 'state') or not petition.state or petition.state == '':
-            if petition.completion_percentage == 100:
-                petition.state = 'Approved'
-            elif petition.completion_percentage >= 90:
-                petition.state = 'Under Review'
-            elif petition.completion_percentage >= 50:
-                petition.state = 'Pending'
-            else:
-                petition.state = 'Needs Information'
-        
-        # Add user information to each petition for display
-        petition.petitioner_name = f"{petition.user.firstname} {petition.user.lastname}"
-        petition.petitioner_email = petition.user.email
-        petition.petitioner_phone = petition.user.phone
-    
-    # Pass the petitions, page_size and current datetime to the attorney dashboard template
-    return render_template('attorney_dashboard.html', petitions=petitions, now=datetime.now(), page_size=5)
+    # Redirect to the attorney dashboard
+    return redirect(url_for('attorney_dashboard'))
 
-@app.route('/attorney/petition/<int:petition_id>')
+@app.route('/attorney/dashboard')
 @login_required
 @attorney_required
-def attorney_view_petition(petition_id):
-    # Get the petition with the specified ID
-    petition = Petition.query.get_or_404(petition_id)
+def attorney_dashboard():
+    # Get petitioners/applicants for this attorney to review
+    # In a real app, this would filter by the logged-in attorney
+    petitioners = []
     
-    # Get the associated user information
-    user = User.query.get(petition.user_id)
+    # Add simulated data for demonstration
+    import random
+    from datetime import datetime, timedelta
     
-    # Calculate completion percentage
-    filled_fields = 0
-    total_fields = 0
-    for column in petition.__table__.columns:
-        if column.name != 'id' and column.name != 'user_id' and column.name != 'created_at' and column.name != 'updated_at':
-            total_fields += 1
-            if getattr(petition, column.name) is not None and getattr(petition, column.name) != '':
-                filled_fields += 1
+    # Generate random dates within the last 30 days
+    def random_date(days=30):
+        return (datetime.now() - timedelta(days=random.randint(0, days))).strftime('%Y-%m-%d')
     
-    completion_percentage = int((filled_fields / total_fields) * 100) if total_fields > 0 else 0
+    # Form types
+    form_types = ['I-129', 'I-130', 'I-485', 'I-765', 'N-400']
     
-    # Determine eligibility
-    is_eligible = completion_percentage >= 90
-    
-    # Determine state if not set
-    if not hasattr(petition, 'state') or not petition.state or petition.state == '':
-        if completion_percentage == 100:
-            state = 'Approved'
-        elif completion_percentage >= 90:
-            state = 'Under Review'
-        elif completion_percentage >= 50:
-            state = 'Pending'
+    # Generate sample petitioners
+    for i in range(1, 11):  # 10 sample petitioners
+        status = random.choice(['Pending', 'In Progress', 'Completed', 'Rejected'])
+        form_type = random.choice(form_types)
+        
+        if status == 'Completed':
+            completion_percentage = 100
+        elif status == 'Rejected':
+            completion_percentage = random.randint(10, 90)
         else:
-            state = 'Needs Information'
-    else:
-        state = petition.state
+            completion_percentage = random.randint(10, 90)
+        
+        petitioners.append({
+            'id': i,
+            'first_name': f'First{i}',
+            'last_name': f'Last{i}',
+            'email': f'petitioner{i}@example.com',
+            'phone': f'555-{i:03d}-{i*1111:04d}',
+            'status': status,
+            'form_type': form_type,
+            'submission_date': random_date(),
+            'completion_percentage': completion_percentage
+        })
     
-    return render_template('attorney_review_form.html', 
-                          petition=petition,
-                          user=user,
-                          completion_percentage=completion_percentage,
-                          is_eligible=is_eligible,
-                          state=state)
+    return render_template('attorney_dashboard.html', petitioners=petitioners)
 
 @app.route('/attorney/cases')
 @login_required
@@ -725,27 +475,6 @@ def attorney_cases():
     return render_template('attorney_cases.html', 
                           active_cases=active_cases,
                           archived_cases=archived_cases)
-
-@app.route('/attorney/add-feedback/<int:petition_id>', methods=['POST'])
-@login_required
-@attorney_required
-def attorney_add_feedback(petition_id):
-    # Get the petition with the specified ID
-    petition = Petition.query.get_or_404(petition_id)
-    
-    # Get feedback from form submission
-    feedback = request.form.get('feedback')
-    feedback_type = request.form.get('feedback_type', 'general')  # general, document, form, etc.
-    
-    if feedback:
-        # In a real application, you would save this to a Feedback model
-        # For now, we'll just flash a message to simulate success
-        flash(f'Feedback added successfully to petition #{petition_id}', 'success')
-    else:
-        flash('Feedback cannot be empty', 'error')
-    
-    # Redirect back to the petition details page
-    return redirect(url_for('attorney_view_petition', petition_id=petition_id))
 
 @app.route('/attorney/clients')
 @login_required
@@ -798,17 +527,13 @@ def attorney_forms():
     form_categories = {
         'Employment-Based': [
             {'id': 'I-129', 'name': 'Petition for Nonimmigrant Worker', 'description': 'For H-1B, L, O, and other employment-based temporary visas', 'last_updated': '2023-03-15'},
-            {'id': 'I-140', 'name': 'Immigrant Petition for Alien Worker', 'description': 'For employment-based green cards', 'last_updated': '2025-06-04', 'fillable': True},
-            {'id': 'ETA-9089', 'name': 'PERM Labor Certification', 'description': 'Required for many employment-based green cards', 'last_updated': '2023-05-01'}
+            {'id': 'I-140', 'name': 'Immigrant Petition for Alien Worker', 'description': 'For employment-based green cards', 'last_updated': '2023-01-20'},
+            {'id': 'I-765', 'name': 'Application for Employment Authorization', 'description': 'For work permits', 'last_updated': '2023-02-10'}
         ],
         'Family-Based': [
-            {'id': 'I-130', 'name': 'Petition for Alien Relative', 'description': 'For family-based immigration', 'last_updated': '2023-02-28'},
-            {'id': 'I-485', 'name': 'Application to Register Permanent Residence', 'description': 'Adjustment of status to permanent resident', 'last_updated': '2023-04-10'},
-            {'id': 'I-751', 'name': 'Petition to Remove Conditions on Residence', 'description': 'For conditional permanent residents through marriage', 'last_updated': '2023-03-15'}
-        ],
-        'Citizenship': [
-            {'id': 'N-400', 'name': 'Application for Naturalization', 'description': 'For U.S. citizenship', 'last_updated': '2023-01-05'},
-            {'id': 'N-600', 'name': 'Application for Certificate of Citizenship', 'description': 'For claiming citizenship through parents', 'last_updated': '2022-11-30'}
+            {'id': 'I-130', 'name': 'Petition for Alien Relative', 'description': 'For sponsoring family members', 'last_updated': '2023-04-05'},
+            {'id': 'I-485', 'name': 'Application to Register Permanent Residence', 'description': 'For green card applications', 'last_updated': '2023-03-22'},
+            {'id': 'I-751', 'name': 'Petition to Remove Conditions on Residence', 'description': 'For conditional green card holders', 'last_updated': '2022-11-30'}
         ],
         'Humanitarian': [
             {'id': 'I-589', 'name': 'Application for Asylum and Withholding of Removal', 'description': 'For asylum seekers', 'last_updated': '2023-04-22'},
@@ -816,77 +541,145 @@ def attorney_forms():
         ]
     }
     
-    # Create detailed immigration forms list for the template
-    immigration_forms = [
+    return render_template('attorney_forms.html', form_categories=form_categories)
+
+@app.route('/attorney/review-form/<int:petition_id>')
+@login_required
+@attorney_required
+def attorney_review_form(petition_id):
+    # In a real app, this would fetch the petition from the database
+    # For demo purposes, we'll create a simulated petition
+    import random
+    from datetime import datetime, timedelta
+    
+    # Generate a random date within the last 30 days
+    def random_date(days=30):
+        return (datetime.now() - timedelta(days=random.randint(0, days))).strftime('%Y-%m-%d')
+    
+    # Form types
+    form_types = ['I-129', 'I-130', 'I-485', 'I-765', 'N-400']
+    form_type = random.choice(form_types)
+    
+    # Statuses
+    statuses = ['Pending', 'In Progress', 'Completed', 'Rejected']
+    status = random.choice(statuses)
+    
+    # Completion percentage
+    if status == 'Completed':
+        completion_percentage = 100
+    elif status == 'Rejected':
+        completion_percentage = random.randint(10, 90)
+    else:
+        completion_percentage = random.randint(10, 90)
+    
+    # Create a petition object
+    petition = {
+        'id': petition_id,
+        'first_name': f'First{petition_id}',
+        'last_name': f'Last{petition_id}',
+        'email': f'petitioner{petition_id}@example.com',
+        'phone': f'555-{petition_id:03d}-{petition_id*1111:04d}',
+        'status': status,
+        'form_type': form_type,
+        'submission_date': random_date(),
+        'completion_percentage': completion_percentage,
+        'is_eligible': random.choice([True, False]),
+        'has_mismatches': random.choice([True, False]),
+        'attorney_notes': 'Previous notes about this petition...' if random.random() > 0.5 else ''
+    }
+    
+    # Generate field matches
+    field_matches = []
+    fields = ['First Name', 'Last Name', 'Date of Birth', 'Country of Birth', 'Current Address', 'Passport Number']
+    for field in fields:
+        matches = random.random() > 0.3  # 70% chance of matching
+        field_match = {
+            'field_name': field,
+            'matches': matches
+        }
+        
+        if not matches:
+            field_match['form_value'] = f'Form value for {field}'
+            field_match['doc_value'] = f'Document value for {field}'
+        
+        field_matches.append(field_match)
+    
+    petition['field_matches'] = field_matches
+    
+    # Generate form sections
+    form_sections = [
         {
-            'id': 1,
-            'code': 'I-129',
-            'name': 'Petition for Nonimmigrant Worker',
-            'category': 'employment',
-            'description': 'Used by employers or sponsors to file for temporary foreign workers in nonimmigrant classifications such as H-1B, L-1, O-1, etc.',
-            'edition_date': '07/20/2023',
-            'expiration_date': '07/31/2025',
-            'fee': '460',
-            'pages': 9,
-            'processing_time': '2-6 months',
-            'supporting_documents': [
-                'Labor Condition Application (for H-1B)',
-                'Evidence of beneficiary qualifications',
-                'Employer supporting documents',
-                'Filing fee payment'
-            ],
-            'filing_location': 'USCIS Service Center based on classification and work location',
-            'pdf_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-129.pdf',
-            'instructions_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-129instr.pdf',
-            'fillable': False
+            'title': 'Personal Information',
+            'fields': [
+                {'id': 'first_name', 'label': 'First Name', 'value': petition['first_name']},
+                {'id': 'last_name', 'label': 'Last Name', 'value': petition['last_name']},
+                {'id': 'dob', 'label': 'Date of Birth', 'value': '1985-05-15'},
+                {'id': 'pob', 'label': 'Country of Birth', 'value': 'Mexico'}
+            ]
         },
         {
-            'id': 2,
-            'code': 'I-140',
-            'name': 'Immigrant Petition for Alien Worker',
-            'category': 'employment',
-            'description': 'Used by employers to petition for foreign nationals to immigrate permanently to the United States based on employment.',
-            'edition_date': '01/31/2024',
-            'expiration_date': '01/31/2026',
-            'fee': '700',
-            'pages': 9,
-            'processing_time': '3-8 months',
-            'supporting_documents': [
-                'Labor certification (if required)',
-                'Evidence of ability to pay wage',
-                'Evidence of beneficiary qualifications',
-                'Filing fee payment'
-            ],
-            'filing_location': 'USCIS Service Center based on classification and employer location',
-            'pdf_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-140.pdf',
-            'instructions_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-140instr.pdf',
-            'fillable': True
+            'title': 'Contact Information',
+            'fields': [
+                {'id': 'email', 'label': 'Email', 'value': petition['email']},
+                {'id': 'phone', 'label': 'Phone', 'value': petition['phone']},
+                {'id': 'address', 'label': 'Current Address', 'value': '123 Main St, Anytown, CA 12345'}
+            ]
         },
         {
-            'id': 3,
-            'code': 'I-485',
-            'name': 'Application to Register Permanent Residence or Adjust Status',
-            'category': 'adjustment',
-            'description': 'Used by individuals already in the United States to apply for lawful permanent resident status.',
-            'edition_date': '12/01/2023',
-            'expiration_date': '12/31/2025',
-            'fee': '1225',
-            'pages': 20,
-            'processing_time': '8-14 months',
-            'supporting_documents': [
-                'Form I-797 approval notice (if applicable)',
-                'Birth certificate',
-                'Passport photos',
-                'Medical examination (Form I-693)'
-            ],
-            'filing_location': 'USCIS Lockbox facility based on eligibility category and residence',
-            'pdf_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-485.pdf',
-            'instructions_url': 'https://www.uscis.gov/sites/default/files/document/forms/i-485instr.pdf',
-            'fillable': False
+            'title': 'Immigration Information',
+            'fields': [
+                {'id': 'visa_type', 'label': 'Current Visa Type', 'value': 'B-2'},
+                {'id': 'passport', 'label': 'Passport Number', 'value': 'AB123456'},
+                {'id': 'entry_date', 'label': 'Last Entry Date', 'value': '2022-08-10'}
+            ]
         }
     ]
     
-    return render_template('attorney_forms.html', form_categories=form_categories, immigration_forms=immigration_forms)
+    petition['form_sections'] = form_sections
+    
+    # Generate mismatch fields
+    mismatch_fields = []
+    if petition['has_mismatches']:
+        # Randomly select some fields to be mismatches
+        all_field_ids = [field['id'] for section in form_sections for field in section['fields']]
+        num_mismatches = random.randint(1, 3)
+        mismatch_fields = random.sample(all_field_ids, num_mismatches)
+    
+    petition['mismatch_fields'] = mismatch_fields
+    
+    # Generate documents
+    document_types = ['Passport', 'Birth Certificate', 'Marriage Certificate', 'Visa', 'I-94 Record', 'Employment Letter']
+    document_icons = ['fa-passport', 'fa-file-alt', 'fa-file-contract', 'fa-id-card', 'fa-plane-arrival', 'fa-briefcase']
+    
+    documents = []
+    for i in range(random.randint(3, 6)):
+        doc_type = random.choice(document_types)
+        documents.append({
+            'id': i + 1,
+            'name': f'{doc_type} - {petition["first_name"]} {petition["last_name"]}',
+            'type': doc_type,
+            'icon': random.choice(document_icons),
+            'upload_date': random_date()
+        })
+    
+    petition['documents'] = documents
+    
+    # Generate feedback history
+    feedback_history = []
+    if random.random() > 0.5:  # 50% chance of having feedback history
+        num_feedback = random.randint(1, 3)
+        attorney_names = ['John Smith', 'Maria Rodriguez', 'David Lee']
+        
+        for i in range(num_feedback):
+            feedback_history.append({
+                'date': random_date(),
+                'attorney': random.choice(attorney_names),
+                'content': f'Feedback entry #{i+1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
+            })
+    
+    petition['feedback_history'] = feedback_history
+    
+    return render_template('attorney_review_form.html', petition=petition)
 
 @app.route('/attorney/documents')
 @login_required
@@ -956,13 +749,6 @@ def upload_attorney_document():
                 'case_id': int(case_id) if case_id.isdigit() else None,
                 'upload_date': datetime.now().strftime('%Y-%m-%d'),
                 'size_formatted': '2.5 MB',  # Simulated file size
-                'icon': get_document_icon(document_type),
-                'shared': False
-            }
-        })
-
-
-@app.route('/petition/<int:petition_id>', endpoint='attorney_petition_details')
 @login_required
 @attorney_required
 def petition_details(petition_id):

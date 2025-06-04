@@ -92,6 +92,9 @@ class Petition(db.Model):
     wage_amount = db.Column(db.Float, nullable=False)
     wage_period = db.Column(db.String(20), nullable=False)
     
+    # Status tracking
+    state = db.Column(db.String(50), default='Pending')
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):
