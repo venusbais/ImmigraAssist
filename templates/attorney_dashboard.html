@@ -4,12 +4,7 @@
 
 {% block attorney_content %}
 <div class="dashboard-container">
-    <div class="main-content-header">
-        <h1 class="page-title">Attorney Dashboard</h1>
-        <p class="page-subtitle">Manage your client petitions</p>
-    </div>
-    
-    <div class="welcome-card card card-primary">
+    <div class="welcome-card card card-primary mb-4">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-user-tie"></i> Welcome Back, {{ session.attorney_name or 'Attorney' }}</h3>
             <span class="text-muted">{{ now.strftime('%A, %B %d, %Y') }}</span>
@@ -19,7 +14,7 @@
     <div class="card card-primary">
         <div class="card-header">
             <h3 class="card-title"><i class="fas fa-briefcase"></i> Case Overview</h3>
-            <div class="filter-controls">
+            <!-- <div class="filter-controls">
                 <select id="status-filter" class="form-control">
                     <option value="all">All Statuses</option>
                     <option value="pending">Pending</option>
@@ -35,7 +30,7 @@
                     <option value="i140">I-140</option>
                     <option value="i485">I-485</option>
                 </select>
-            </div>
+            </div> -->
         </div>
         <div class="card-body">
             <div class="search-box">
@@ -48,7 +43,7 @@
                 <table class="petitioner-table">
                     <thead>
                         <tr>
-                            <th>Petitioner Name</th>
+                            <th>Beneficiary Name</th>
                             <th>Company</th>
                             <th>Status</th>
                             <th>Completion</th>
@@ -57,9 +52,10 @@
                     </thead>
                     <tbody>
                         {% if petitions %}
+                            <!-- Petitions are sorted by newest first from the backend -->
                             {% for petition in petitions %}
-                                {% if loop.index0 < page_size %} <!-- Only show first page_size items -->
-                                <tr>
+                                <!-- All petitioners are loaded into DOM, pagination will handle visibility -->
+                                <tr class="petitioner-row">
                                     <td class="petitioner-name">
                                         {{ petition.beneficiary_given_name }} {{ petition.beneficiary_family_name }}
                                     </td>
@@ -79,19 +75,18 @@
                                         </div>
                                     </td>
                                     <td class="action-column">
-                                        <a href="/attorney/petition/{{ petition.id }}" class="btn btn-sm btn-primary">
+                                        <a href="{{ url_for('attorney_review_petition', petition_id=petition.id) }}" class="btn btn-sm btn-primary">
                                             <i class="fas fa-eye"></i> View
                                         </a>
-                                        <a href="/attorney/i140-form/{{ petition.id }}" class="btn btn-sm btn-info">
+                                        <a href="{{ url_for('attorney_i140_form', petition_id=petition.id) }}" class="btn btn-sm btn-info">
                                             <i class="fas fa-edit"></i> Edit
                                         </a>
                                     </td>
                                 </tr>
-                                {% endif %}
                             {% endfor %}
                         {% else %}
                             <!-- Example data if no petitions -->
-                            <tr>
+                            <tr class="petitioner-row">
                                 <td class="petitioner-name">John Smith</td>
                                 <td>Tech Solutions Inc.</td>
                                 <td>
@@ -116,7 +111,7 @@
                                     </a>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr class="petitioner-row">
                                 <td class="petitioner-name">Maria Garcia</td>
                                 <td>Global Innovations</td>
                                 <td>
@@ -141,7 +136,7 @@
                                     </a>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr class="petitioner-row">
                                 <td class="petitioner-name">Wei Chen</td>
                                 <td>Nexus Systems</td>
                                 <td>
@@ -166,7 +161,7 @@
                                     </a>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr class="petitioner-row">
                                 <td class="petitioner-name">Priya Patel</td>
                                 <td>Horizon Healthcare</td>
                                 <td>
@@ -191,7 +186,7 @@
                                     </a>
                                 </td>
                             </tr>
-                            <tr>
+                            <tr class="petitioner-row">
                                 <td class="petitioner-name">Ahmed Hassan</td>
                                 <td>Quantum Research</td>
                                 <td>
@@ -455,6 +450,9 @@
                 return statusMatch && caseTypeMatch && searchMatch;
             });
             
+            // Note: We don't need to sort here as the backend already sorts by newest first
+            // and the DOM order reflects this sorting
+            
             // Reset to first page when filtering
             currentPage = 1;
             showPage(currentPage);
@@ -462,18 +460,28 @@
         
         // Previous button click handler
         if (prevPageBtn) {
-            prevPageBtn.addEventListener('click', function() {
+            prevPageBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default action
+                console.log('Previous button clicked');
                 if (currentPage > 1) {
+                    console.log('Moving to page ' + (currentPage - 1));
                     showPage(currentPage - 1);
+                } else {
+                    console.log('Already at first page');
                 }
             });
         }
         
         // Next button click handler
         if (nextPageBtn) {
-            nextPageBtn.addEventListener('click', function() {
+            nextPageBtn.addEventListener('click', function(e) {
+                e.preventDefault(); // Prevent default action
+                console.log('Next button clicked');
                 if (currentPage < Math.ceil(filteredRows.length / pageSize)) {
+                    console.log('Moving to page ' + (currentPage + 1));
                     showPage(currentPage + 1);
+                } else {
+                    console.log('Already at last page');
                 }
             });
         }
@@ -488,7 +496,31 @@
         if (searchInput) searchInput.addEventListener('input', applyFilters);
         
         // Initialize the first page
-        showPage(1);
+        console.log('Initializing pagination');
+        console.log('Total rows:', allRows.length);
+        console.log('Page size:', pageSize);
+        console.log('Total pages:', Math.ceil(allRows.length / pageSize));
+        
+        // Force re-calculation of filteredRows
+        filteredRows = [...allRows];
+        
+        // Hide all rows initially except those on the first page
+        allRows.forEach((row, index) => {
+            if (index < pageSize) {
+                row.style.display = '';
+            } else {
+                row.style.display = 'none';
+            }
+        });
+        
+        // Initialize pagination display
+        updatePaginationInfo();
+        
+        // Make sure the next button is properly enabled if there are more than one page
+        if (nextPageBtn && allRows.length > pageSize) {
+            nextPageBtn.disabled = false;
+            console.log('Next button enabled: ' + allRows.length + ' rows, ' + pageSize + ' per page');
+        }
     });
 </script>
 {% endblock %}

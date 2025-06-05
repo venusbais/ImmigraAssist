@@ -47,20 +47,20 @@ def login_required(f):
         return f(*args, **kwargs)
     return decorated_function
 
-def admin_required(f):
+def Admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in') or not session.get('is_admin'):
+        if not session.get('logged_in') or not session.get('is_Admin'):
             flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
 
-def attorney_required(f):
+def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not session.get('logged_in') or not (session.get('is_admin') or session.get('is_attorney')):
-            flash('Access denied. Attorney privileges required.', 'error')
+        if not session.get('logged_in') or not (session.get('is_Admin') or session.get('is_admin')):
+            flash('Access denied. Admin privileges required.', 'error')
             return redirect(url_for('login'))
         return f(*args, **kwargs)
     return decorated_function
@@ -116,12 +116,12 @@ def login():
             session['logged_in'] = True
             session['user_id'] = user.id
             session['email'] = email  # Store the user's email in the session for petition lookups
-            session['is_admin'] = user.role == 'admin'
-            session['is_attorney'] = user.role == 'attorney' or user.role == 'admin'  # Admin has attorney access
-            session['attorney_name'] = f"{user.firstname} {user.lastname}" if user.role == 'attorney' or user.role == 'admin' else ''
+            session['is_Admin'] = user.role == 'Admin'
+            session['is_admin'] = user.role == 'admin' or user.role == 'Admin'  # Admin has admin access
+            session['admin_name'] = f"{user.firstname} {user.lastname}" if user.role == 'admin' or user.role == 'Admin' else ''
             flash('Logged in successfully!', 'success')
-            if user.role == 'admin' or user.role == 'attorney':
-                return redirect(url_for('attorney'))
+            if user.role == 'Admin' or user.role == 'admin':
+                return redirect(url_for('admin'))
             return redirect(url_for('index'))
         else:
             flash('Invalid email or password', 'error')
@@ -196,45 +196,45 @@ def dashboard():
             # Get the current user's ID from session
             user_id = session.get('user_id')
             
-            # TEMPORARY SOLUTION FOR TESTING: Use admin user if no user is in session
+            # TEMPORARY SOLUTION FOR TESTING: Use Admin user if no user is in session
             if not user_id:
-                # Find admin user or create one if it doesn't exist
-                admin_user = User.query.filter_by(email='admin@example.com').first()
-                if not admin_user:
-                    print("Creating admin user for testing")
-                    admin_user = User(
+                # Find Admin user or create one if it doesn't exist
+                Admin_user = User.query.filter_by(email='Admin@example.com').first()
+                if not Admin_user:
+                    print("Creating Admin user for testing")
+                    Admin_user = User(
                         firstname='Admin',
                         lastname='User',
-                        email='admin@example.com',
+                        email='Admin@example.com',
                         phone='1234567890',
-                        password=generate_password_hash('admin123'),
-                        role='admin'
+                        password=generate_password_hash('Admin123'),
+                        role='Admin'
                     )
-                    db.session.add(admin_user)
+                    db.session.add(Admin_user)
                     db.session.commit()
                 
-                user_id = admin_user.id
-                print(f"Using admin user (id: {user_id}) for testing")
+                user_id = Admin_user.id
+                print(f"Using Admin user (id: {user_id}) for testing")
             else:
                 # Verify the user exists in the database
                 user = User.query.get(user_id)
                 if not user:
-                    # Find or create admin user as fallback
-                    admin_user = User.query.filter_by(email='admin@example.com').first()
-                    if not admin_user:
-                        admin_user = User(
+                    # Find or create Admin user as fallback
+                    Admin_user = User.query.filter_by(email='Admin@example.com').first()
+                    if not Admin_user:
+                        Admin_user = User(
                             firstname='Admin',
                             lastname='User',
-                            email='admin@example.com',
+                            email='Admin@example.com',
                             phone='1234567890',
-                            password=generate_password_hash('admin123'),
-                            role='admin'
+                            password=generate_password_hash('Admin123'),
+                            role='Admin'
                         )
-                        db.session.add(admin_user)
+                        db.session.add(Admin_user)
                         db.session.commit()
                     
-                    user_id = admin_user.id
-                    print(f"User not found, using admin user (id: {user_id}) for testing")
+                    user_id = Admin_user.id
+                    print(f"User not found, using Admin user (id: {user_id}) for testing")
                 else:
                     print(f"Processing form for user_id: {user_id}, user: {user.email}")
             
@@ -367,16 +367,16 @@ def contact():
         return redirect(url_for('contact'))
     return render_template('contact.html')
 
-@app.route('/admin')
+@app.route('/Admin')
 @login_required
-@admin_required
-def admin():
+@Admin_required
+def Admin():
     users = User.query.all()
-    return render_template('admin.html', users=users)
+    return render_template('Admin.html', users=users)
 
 @app.route('/delete_user/<int:user_id>', methods=['DELETE'])
 @login_required
-@admin_required
+@Admin_required
 def delete_user(user_id):
     if user_id == session.get('user_id'):
         return jsonify({'success': False, 'message': 'Cannot delete yourself'})
@@ -386,19 +386,19 @@ def delete_user(user_id):
     db.session.commit()
     return jsonify({'success': True})
 
-@app.route('/attorney')
+@app.route('/admin')
 @login_required
-@attorney_required
-def attorney():
-    # Redirect to the attorney dashboard
-    return redirect(url_for('attorney_dashboard'))
+@admin_required
+def admin():
+    # Redirect to the admin dashboard
+    return redirect(url_for('admin_dashboard'))
 
-@app.route('/attorney/dashboard')
+@app.route('/admin/dashboard')
 @login_required
-@attorney_required
-def attorney_dashboard():
-    # Get petitioners/applicants for this attorney to review
-    # In a real app, this would filter by the logged-in attorney
+@admin_required
+def admin_dashboard():
+    # Get petitioners/applicants for this admin to review
+    # In a real app, this would filter by the logged-in admin
     petitioners = []
     
     # Add simulated data for demonstration
@@ -436,12 +436,12 @@ def attorney_dashboard():
             'completion_percentage': completion_percentage
         })
     
-    return render_template('attorney_dashboard.html', petitioners=petitioners)
+    return render_template('admin_dashboard.html', petitioners=petitioners)
 
-@app.route('/attorney/cases')
+@app.route('/admin/cases')
 @login_required
-@attorney_required
-def attorney_cases():
+@admin_required
+def admin_cases():
     # Simulate active cases
     active_cases = []
     for i in range(1, 8):
@@ -472,14 +472,14 @@ def attorney_cases():
             'notes': 'Case completed successfully' if 'Approved' in outcomes[i % len(outcomes)] else 'Case unsuccessful'
         })
     
-    return render_template('attorney_cases.html', 
+    return render_template('admin_cases.html', 
                           active_cases=active_cases,
                           archived_cases=archived_cases)
 
-@app.route('/attorney/clients')
+@app.route('/admin/clients')
 @login_required
-@attorney_required
-def attorney_clients():
+@admin_required
+def admin_clients():
     # Get page parameter from query string, default to 1
     page = request.args.get('page', 1, type=int)
     
@@ -513,16 +513,16 @@ def attorney_clients():
     # Determine if there are more pages
     has_next = end_idx < total_clients
     
-    return render_template('attorney_clients.html', 
+    return render_template('admin_clients.html', 
                            clients=clients, 
                            page=page,
                            total_clients=total_clients,
                            has_next=has_next)
 
-@app.route('/attorney/forms')
+@app.route('/admin/forms')
 @login_required
-@attorney_required
-def attorney_forms():
+@admin_required
+def admin_forms():
     # Simulate immigration forms
     form_categories = {
         'Employment-Based': [
@@ -541,12 +541,12 @@ def attorney_forms():
         ]
     }
     
-    return render_template('attorney_forms.html', form_categories=form_categories)
+    return render_template('admin_forms.html', form_categories=form_categories)
 
-@app.route('/attorney/review-form/<int:petition_id>')
+@app.route('/admin/review-form/<int:petition_id>')
 @login_required
-@attorney_required
-def attorney_review_form(petition_id):
+@admin_required
+def admin_review_form(petition_id):
     # In a real app, this would fetch the petition from the database
     # For demo purposes, we'll create a simulated petition
     import random
@@ -585,7 +585,7 @@ def attorney_review_form(petition_id):
         'completion_percentage': completion_percentage,
         'is_eligible': random.choice([True, False]),
         'has_mismatches': random.choice([True, False]),
-        'attorney_notes': 'Previous notes about this petition...' if random.random() > 0.5 else ''
+        'admin_notes': 'Previous notes about this petition...' if random.random() > 0.5 else ''
     }
     
     # Generate field matches
@@ -668,23 +668,23 @@ def attorney_review_form(petition_id):
     feedback_history = []
     if random.random() > 0.5:  # 50% chance of having feedback history
         num_feedback = random.randint(1, 3)
-        attorney_names = ['John Smith', 'Maria Rodriguez', 'David Lee']
+        admin_names = ['John Smith', 'Maria Rodriguez', 'David Lee']
         
         for i in range(num_feedback):
             feedback_history.append({
                 'date': random_date(),
-                'attorney': random.choice(attorney_names),
+                'admin': random.choice(admin_names),
                 'content': f'Feedback entry #{i+1}. Lorem ipsum dolor sit amet, consectetur adipiscing elit.'
             })
     
     petition['feedback_history'] = feedback_history
     
-    return render_template('attorney_review_form.html', petition=petition)
+    return render_template('admin_review_form.html', petition=petition)
 
-@app.route('/attorney/documents')
+@app.route('/admin/documents')
 @login_required
-@attorney_required
-def attorney_documents():
+@admin_required
+def admin_documents():
     # Simulate clients for document filtering
     clients = []
     for i in range(1, 10):
@@ -716,13 +716,13 @@ def attorney_documents():
             'shared': (i % 3 == 0)
         })
     
-    return render_template('attorney_documents.html', documents=documents, clients=clients)
+    return render_template('admin_documents.html', documents=documents, clients=clients)
 
 
-@app.route('/attorney/upload-document', methods=['POST'])
+@app.route('/admin/upload-document', methods=['POST'])
 @login_required
-@attorney_required
-def upload_attorney_document():
+@admin_required
+def upload_admin_document():
     # In a real application, handle file upload with request.files
     # For this simulation, we'll just return a success response
     
@@ -750,7 +750,7 @@ def upload_attorney_document():
                 'upload_date': datetime.now().strftime('%Y-%m-%d'),
                 'size_formatted': '2.5 MB',  # Simulated file size
 @login_required
-@attorney_required
+@admin_required
 def petition_details(petition_id):
     # Simulate petition data
     petition = {
@@ -802,10 +802,10 @@ def petition_details(petition_id):
     
     return render_template('petition_details.html', petition=petition)
 
-@app.route('/attorney/calendar')
+@app.route('/admin/calendar')
 @login_required
-@attorney_required
-def attorney_calendar():
+@admin_required
+def admin_calendar():
     import datetime
     
     # Current date for generating events
@@ -881,30 +881,30 @@ def attorney_calendar():
             
         upcoming_events.append(event)
     
-    return render_template('attorney_calendar.html', 
+    return render_template('admin_calendar.html', 
                           calendar_events=calendar_events,
                           upcoming_events=upcoming_events,
                           clients=clients)
 
-@app.route('/attorney/settings')
+@app.route('/admin/settings')
 @login_required
-@attorney_required
-def attorney_settings():
+@admin_required
+def admin_settings():
     # Get current user
     user_id = session.get('user_id')
-    attorney = User.query.get(user_id)
+    admin = User.query.get(user_id)
     
-    # Simulate attorney preferences
-    if not hasattr(attorney, 'preferences'):
-        attorney.preferences = {
+    # Simulate admin preferences
+    if not hasattr(admin, 'preferences'):
+        admin.preferences = {
             'theme': 'light',
             'dashboard_layout': 'detailed',
             'default_calendar_view': 'month'
         }
     
     # Simulate notification settings
-    if not hasattr(attorney, 'notifications'):
-        attorney.notifications = {
+    if not hasattr(admin, 'notifications'):
+        admin.notifications = {
             'email_new_cases': True,
             'email_case_updates': True,
             'email_deadlines': True,
@@ -914,22 +914,22 @@ def attorney_settings():
         }
     
     # Simulate two-factor authentication status
-    if not hasattr(attorney, 'two_factor_enabled'):
-        attorney.two_factor_enabled = False
+    if not hasattr(admin, 'two_factor_enabled'):
+        admin.two_factor_enabled = False
     
     # For demonstration purposes
-    attorney.bar_number = 'ABC12345'
-    attorney.jurisdiction = 'New York State'
-    attorney.practice_areas = ['family', 'employment']
-    attorney.bio = 'Experienced immigration attorney with 10+ years of practice.'
+    admin.bar_number = 'ABC12345'
+    admin.jurisdiction = 'New York State'
+    admin.practice_areas = ['family', 'employment']
+    admin.bio = 'Experienced immigration admin with 10+ years of practice.'
     
-    return render_template('attorney_settings.html', attorney=attorney)
+    return render_template('admin_settings.html', admin=admin)
 
-# API routes for attorney functions
+# API routes for admin functions
 
-@app.route('/attorney/get-client-cases/<int:client_id>')
+@app.route('/admin/get-client-cases/<int:client_id>')
 @login_required
-@attorney_required
+@admin_required
 def get_client_cases(client_id):
     # Simulate cases for the client
     cases = []
@@ -944,115 +944,115 @@ def get_client_cases(client_id):
     
     return jsonify({'success': True, 'cases': cases})
 
-@app.route('/attorney/add-client', methods=['POST'])
+@app.route('/admin/add-client', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def add_client():
     # In a real application, validate and save to database
     return jsonify({'success': True, 'message': 'Client added successfully'})
 
-@app.route('/attorney/edit-client/<int:client_id>', methods=['POST'])
+@app.route('/admin/edit-client/<int:client_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def edit_client(client_id):
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Client updated successfully'})
 
-@app.route('/attorney/toggle-client-status/<int:client_id>', methods=['POST'])
+@app.route('/admin/toggle-client-status/<int:client_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def toggle_client_status(client_id):
     # In a real application, update status in database
     return jsonify({'success': True, 'message': 'Client status updated'})
 
-@app.route('/attorney/upload-document', methods=['POST'])
+@app.route('/admin/upload-document', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def upload_document():
     # In a real application, validate and save file to storage
     return jsonify({'success': True, 'message': 'Document uploaded successfully'})
 
-@app.route('/attorney/share-document/<int:document_id>', methods=['POST'])
+@app.route('/admin/share-document/<int:document_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def share_document(document_id):
     # In a real application, update sharing settings in database
     return jsonify({'success': True, 'message': 'Document shared successfully'})
 
-@app.route('/attorney/delete-document/<int:document_id>', methods=['POST'])
+@app.route('/admin/delete-document/<int:document_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def delete_document(document_id):
     # In a real application, delete from storage and database
     return jsonify({'success': True, 'message': 'Document deleted successfully'})
 
-@app.route('/attorney/add-calendar-event', methods=['POST'])
+@app.route('/admin/add-calendar-event', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def add_calendar_event():
     # In a real application, validate and save to database
     return jsonify({'success': True, 'message': 'Event added successfully'})
 
-@app.route('/attorney/edit-event/<int:event_id>', methods=['POST'])
+@app.route('/admin/edit-event/<int:event_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def edit_calendar_event(event_id):
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Event updated successfully'})
 
-@app.route('/attorney/delete-event/<int:event_id>', methods=['POST'])
+@app.route('/admin/delete-event/<int:event_id>', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def delete_calendar_event(event_id):
     # In a real application, delete from database
     return jsonify({'success': True, 'message': 'Event deleted successfully'})
 
-@app.route('/attorney/update-attorney-profile', methods=['POST'])
+@app.route('/admin/update-admin-profile', methods=['POST'])
 @login_required
-@attorney_required
-def update_attorney_profile():
+@admin_required
+def update_admin_profile():
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Profile updated successfully'})
 
-@app.route('/attorney/update-attorney-password', methods=['POST'])
+@app.route('/admin/update-admin-password', methods=['POST'])
 @login_required
-@attorney_required
-def update_attorney_password():
+@admin_required
+def update_admin_password():
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Password updated successfully'})
 
-@app.route('/attorney/update-attorney-notifications', methods=['POST'])
+@app.route('/admin/update-admin-notifications', methods=['POST'])
 @login_required
-@attorney_required
-def update_attorney_notifications():
+@admin_required
+def update_admin_notifications():
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Notification preferences updated'})
 
-@app.route('/attorney/update-attorney-preferences', methods=['POST'])
+@app.route('/admin/update-admin-preferences', methods=['POST'])
 @login_required
-@attorney_required
-def update_attorney_preferences():
+@admin_required
+def update_admin_preferences():
     # In a real application, validate and update database
     return jsonify({'success': True, 'message': 'Preferences updated successfully'})
 
-@app.route('/attorney/enable-two-factor', methods=['POST'])
+@app.route('/admin/enable-two-factor', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def enable_two_factor():
     # In a real application, validate code and enable 2FA
     return jsonify({'success': True, 'message': 'Two-factor authentication enabled'})
 
-@app.route('/attorney/disable-two-factor', methods=['POST'])
+@app.route('/admin/disable-two-factor', methods=['POST'])
 @login_required
-@attorney_required
+@admin_required
 def disable_two_factor():
     # In a real application, validate password and disable 2FA
     return jsonify({'success': True, 'message': 'Two-factor authentication disabled'})
 
 
-@app.route('/attorney/petition/<int:petition_id>')
+@app.route('/admin/petition/<int:petition_id>')
 @login_required
-@attorney_required
+@admin_required
 def petition_details(petition_id):
     petition = Petition.query.get_or_404(petition_id)
     
@@ -1062,7 +1062,7 @@ def petition_details(petition_id):
         {'name': 'Initial Review', 'status': 'completed', 'date': '2025-05-15'},
         {'name': 'Document Collection', 'status': 'completed', 'date': '2025-05-20'},
         {'name': 'Form Preparation', 'status': 'in-progress', 'date': '2025-05-25'},
-        {'name': 'Attorney Review', 'status': 'pending', 'date': ''},
+        {'name': 'Admin Review', 'status': 'pending', 'date': ''},
         {'name': 'USCIS Submission', 'status': 'pending', 'date': ''},
         {'name': 'USCIS Processing', 'status': 'pending', 'date': ''},
         {'name': 'Decision', 'status': 'pending', 'date': ''}
@@ -1083,11 +1083,11 @@ def petition_details(petition_id):
                           progress_steps=progress_steps,
                           documents=documents)
 
-@app.route('/attorney/submit-attorney-form', methods=['POST'])
+@app.route('/admin/submit-admin-form', methods=['POST'])
 @login_required
-@attorney_required
-def submit_attorney_form():
-    # Process the attorney-filled form submission
+@admin_required
+def submit_admin_form():
+    # Process the admin-filled form submission
     if request.method == 'POST':
         # Handle form data processing here
         petition_id = request.form.get('petition_id')
@@ -1484,32 +1484,32 @@ def get_user_petition():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        # Create Admin user if it doesn't exist
+        Admin_user = User.query.filter_by(email='Admin@example.com').first()
+        if not Admin_user:
+            Admin = User(
+                firstname='Admin',
+                lastname='User',
+                email='Admin@example.com',
+                phone='1234567890',
+                password=generate_password_hash('Admin123'),
+                role='Admin'
+            )
+            db.session.add(Admin)
+            db.session.commit()
+            
         # Create admin user if it doesn't exist
         admin_user = User.query.filter_by(email='admin@example.com').first()
         if not admin_user:
             admin = User(
-                firstname='Admin',
-                lastname='User',
+                firstname='Jane',
+                lastname='Admin',
                 email='admin@example.com',
-                phone='1234567890',
+                phone='9876543210',
                 password=generate_password_hash('admin123'),
                 role='admin'
             )
             db.session.add(admin)
-            db.session.commit()
-            
-        # Create attorney user if it doesn't exist
-        attorney_user = User.query.filter_by(email='attorney@example.com').first()
-        if not attorney_user:
-            attorney = User(
-                firstname='Jane',
-                lastname='Attorney',
-                email='attorney@example.com',
-                phone='9876543210',
-                password=generate_password_hash('attorney123'),
-                role='attorney'
-            )
-            db.session.add(attorney)
             db.session.commit()
             
     app.run(debug=True)

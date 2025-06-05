@@ -1,6 +1,6 @@
 {% extends "attorney_base.html" %}
 
-{% block title %}Settings - Attorney Corner{% endblock %}
+{% block title %}Settings - Admin Corner{% endblock %}
 
 {% block attorney_content %}
 <div class="card">
@@ -18,27 +18,27 @@
             <div class="tab-content">
                 <!-- Profile Settings -->
                 <div class="tab-pane active" id="profile">
-                    <form id="profile-form" method="post" action="{{ url_for('update_attorney_profile') }}">
+                    <form id="profile-form" method="post" action="{{ url_for('update_admin_profile') }}">
                         <div class="form-section">
                             <h3>Personal Information</h3>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="firstname">First Name</label>
-                                    <input type="text" id="firstname" name="firstname" class="form-control" value="{{ attorney.firstname }}" required>
+                                    <input type="text" id="firstname" name="firstname" class="form-control" value="{{ admin.firstname }}" required>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="lastname">Last Name</label>
-                                    <input type="text" id="lastname" name="lastname" class="form-control" value="{{ attorney.lastname }}" required>
+                                    <input type="text" id="lastname" name="lastname" class="form-control" value="{{ admin.lastname }}" required>
                                 </div>
                             </div>
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="email">Email Address</label>
-                                    <input type="email" id="email" name="email" class="form-control" value="{{ attorney.email }}" required>
+                                    <input type="email" id="email" name="email" class="form-control" value="{{ admin.email }}" required>
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="phone">Phone Number</label>
-                                    <input type="tel" id="phone" name="phone" class="form-control" value="{{ attorney.phone|default('') }}">
+                                    <input type="tel" id="phone" name="phone" class="form-control" value="{{ admin.phone|default('') }}">
                                 </div>
                             </div>
                         </div>
@@ -48,26 +48,26 @@
                             <div class="form-row">
                                 <div class="form-group col-md-6">
                                     <label for="bar_number">Bar Number</label>
-                                    <input type="text" id="bar_number" name="bar_number" class="form-control" value="{{ attorney.bar_number|default('') }}">
+                                    <input type="text" id="bar_number" name="bar_number" class="form-control" value="{{ admin.bar_number|default('') }}">
                                 </div>
                                 <div class="form-group col-md-6">
                                     <label for="jurisdiction">Jurisdiction</label>
-                                    <input type="text" id="jurisdiction" name="jurisdiction" class="form-control" value="{{ attorney.jurisdiction|default('') }}">
+                                    <input type="text" id="jurisdiction" name="jurisdiction" class="form-control" value="{{ admin.jurisdiction|default('') }}">
                                 </div>
                             </div>
                             <div class="form-group">
                                 <label for="practice_areas">Practice Areas</label>
                                 <select id="practice_areas" name="practice_areas" class="form-control" multiple>
-                                    <option value="family" {% if 'family' in attorney.practice_areas %}selected{% endif %}>Family-Based Immigration</option>
-                                    <option value="employment" {% if 'employment' in attorney.practice_areas %}selected{% endif %}>Employment-Based Immigration</option>
-                                    <option value="asylum" {% if 'asylum' in attorney.practice_areas %}selected{% endif %}>Asylum & Refugee</option>
-                                    <option value="removal" {% if 'removal' in attorney.practice_areas %}selected{% endif %}>Removal Defense</option>
-                                    <option value="citizenship" {% if 'citizenship' in attorney.practice_areas %}selected{% endif %}>Citizenship & Naturalization</option>
+                                    <option value="family" {% if 'family' in admin.practice_areas %}selected{% endif %}>Family-Based Immigration</option>
+                                    <option value="employment" {% if 'employment' in admin.practice_areas %}selected{% endif %}>Employment-Based Immigration</option>
+                                    <option value="asylum" {% if 'asylum' in admin.practice_areas %}selected{% endif %}>Asylum & Refugee</option>
+                                    <option value="removal" {% if 'removal' in admin.practice_areas %}selected{% endif %}>Removal Defense</option>
+                                    <option value="citizenship" {% if 'citizenship' in admin.practice_areas %}selected{% endif %}>Citizenship & Naturalization</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="bio">Professional Biography</label>
-                                <textarea id="bio" name="bio" class="form-control" rows="4">{{ attorney.bio|default('') }}</textarea>
+                                <textarea id="bio" name="bio" class="form-control" rows="4">{{ admin.bio|default('') }}</textarea>
                             </div>
                         </div>
                         
@@ -79,12 +79,12 @@
                 
                 <!-- Notification Settings -->
                 <div class="tab-pane" id="notifications">
-                    <form id="notifications-form" method="post" action="{{ url_for('update_attorney_notifications') }}">
+                    <form id="notifications-form" method="post" action="{{ url_for('update_admin_notifications') }}">
                         <div class="form-section">
                             <h3>Email Notifications</h3>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="email_new_cases" {% if attorney.notifications.email_new_cases %}checked{% endif %}>
+                                    <input type="checkbox" name="email_new_cases" {% if admin.notifications.email_new_cases %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -94,7 +94,7 @@
                             </div>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="email_case_updates" {% if attorney.notifications.email_case_updates %}checked{% endif %}>
+                                    <input type="checkbox" name="email_case_updates" {% if admin.notifications.email_case_updates %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -104,7 +104,7 @@
                             </div>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="email_deadlines" {% if attorney.notifications.email_deadlines %}checked{% endif %}>
+                                    <input type="checkbox" name="email_deadlines" {% if admin.notifications.email_deadlines %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -114,7 +114,7 @@
                             </div>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="email_appointments" {% if attorney.notifications.email_appointments %}checked{% endif %}>
+                                    <input type="checkbox" name="email_appointments" {% if admin.notifications.email_appointments %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -128,7 +128,7 @@
                             <h3>System Notifications</h3>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="system_messages" {% if attorney.notifications.system_messages %}checked{% endif %}>
+                                    <input type="checkbox" name="system_messages" {% if admin.notifications.system_messages %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -138,7 +138,7 @@
                             </div>
                             <div class="notification-option">
                                 <label class="toggle-switch">
-                                    <input type="checkbox" name="system_client_messages" {% if attorney.notifications.system_client_messages %}checked{% endif %}>
+                                    <input type="checkbox" name="system_client_messages" {% if admin.notifications.system_client_messages %}checked{% endif %}>
                                     <span class="toggle-slider"></span>
                                 </label>
                                 <div class="notification-text">
@@ -156,22 +156,22 @@
                 
                 <!-- Preferences Settings -->
                 <div class="tab-pane" id="preferences">
-                    <form id="preferences-form" method="post" action="{{ url_for('update_attorney_preferences') }}">
+                    <form id="preferences-form" method="post" action="{{ url_for('update_admin_preferences') }}">
                         <div class="form-section">
                             <h3>Display Settings</h3>
                             <div class="form-group">
                                 <label for="theme">Theme</label>
                                 <select id="theme" name="theme" class="form-control">
-                                    <option value="light" {% if attorney.preferences.theme == 'light' %}selected{% endif %}>Light</option>
-                                    <option value="dark" {% if attorney.preferences.theme == 'dark' %}selected{% endif %}>Dark</option>
-                                    <option value="system" {% if attorney.preferences.theme == 'system' %}selected{% endif %}>Use System Setting</option>
+                                    <option value="light" {% if admin.preferences.theme == 'light' %}selected{% endif %}>Light</option>
+                                    <option value="dark" {% if admin.preferences.theme == 'dark' %}selected{% endif %}>Dark</option>
+                                    <option value="system" {% if admin.preferences.theme == 'system' %}selected{% endif %}>Use System Setting</option>
                                 </select>
                             </div>
                             <div class="form-group">
                                 <label for="dashboard_layout">Dashboard Layout</label>
                                 <select id="dashboard_layout" name="dashboard_layout" class="form-control">
-                                    <option value="compact" {% if attorney.preferences.dashboard_layout == 'compact' %}selected{% endif %}>Compact</option>
-                                    <option value="detailed" {% if attorney.preferences.dashboard_layout == 'detailed' %}selected{% endif %}>Detailed</option>
+                                    <option value="compact" {% if admin.preferences.dashboard_layout == 'compact' %}selected{% endif %}>Compact</option>
+                                    <option value="detailed" {% if admin.preferences.dashboard_layout == 'detailed' %}selected{% endif %}>Detailed</option>
                                 </select>
                             </div>
                         </div>
@@ -181,9 +181,9 @@
                             <div class="form-group">
                                 <label for="default_calendar_view">Default Calendar View</label>
                                 <select id="default_calendar_view" name="default_calendar_view" class="form-control">
-                                    <option value="month" {% if attorney.preferences.default_calendar_view == 'month' %}selected{% endif %}>Month</option>
-                                    <option value="week" {% if attorney.preferences.default_calendar_view == 'week' %}selected{% endif %}>Week</option>
-                                    <option value="day" {% if attorney.preferences.default_calendar_view == 'day' %}selected{% endif %}>Day</option>
+                                    <option value="month" {% if admin.preferences.default_calendar_view == 'month' %}selected{% endif %}>Month</option>
+                                    <option value="week" {% if admin.preferences.default_calendar_view == 'week' %}selected{% endif %}>Week</option>
+                                    <option value="day" {% if admin.preferences.default_calendar_view == 'day' %}selected{% endif %}>Day</option>
                                 </select>
                             </div>
                         </div>
@@ -196,7 +196,7 @@
                 
                 <!-- Security Settings -->
                 <div class="tab-pane" id="security">
-                    <form id="password-form" method="post" action="{{ url_for('update_attorney_password') }}">
+                    <form id="password-form" method="post" action="{{ url_for('update_admin_password') }}">
                         <div class="form-section">
                             <h3>Change Password</h3>
                             <div class="form-group">
@@ -227,11 +227,11 @@
                             <div class="two-factor-status">
                                 <p>
                                     Status: 
-                                    <span class="status-badge {% if attorney.two_factor_enabled %}status-approved{% else %}status-pending{% endif %}">
-                                        {{ 'Enabled' if attorney.two_factor_enabled else 'Disabled' }}
+                                    <span class="status-badge {% if admin.two_factor_enabled %}status-approved{% else %}status-pending{% endif %}">
+                                        {{ 'Enabled' if admin.two_factor_enabled else 'Disabled' }}
                                     </span>
                                 </p>
-                                {% if attorney.two_factor_enabled %}
+                                {% if admin.two_factor_enabled %}
                                 <button type="button" class="btn btn-danger" data-toggle="modal" data-target="#disableTwoFactorModal">
                                     Disable Two-Factor
                                 </button>

@@ -1,6 +1,6 @@
 {% extends "attorney_base.html" %}
 
-{% block title %}Immigration Forms - Attorney Corner{% endblock %}
+{% block title %}Immigration Forms - Admin Corner{% endblock %}
 
 {% block attorney_content %}
 <div class="card">
@@ -292,7 +292,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 <strong>${petition.name}</strong> (${petition.type})<br>
                                 <small>${petition.company}</small>
                             </div>
-                            <a href="/attorney/i140-form/${petition.id}" class="btn btn-primary btn-sm">
+                            <a href="/admin/i140-form/${petition.id}" class="btn btn-primary btn-sm">
                                 Select
                             </a>
                         </li>

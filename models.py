@@ -95,6 +95,11 @@ class Petition(db.Model):
     # Status tracking
     state = db.Column(db.String(50), default='Pending')
     
+    # Additional fields for attorney review
+    form_data = db.Column(db.Text)  # JSON string containing form data
+    feedback = db.Column(db.Text)   # JSON string containing feedback history
+    admin_notes = db.Column(db.Text)  # Notes from attorney/admin
+    
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
 
     def __repr__(self):

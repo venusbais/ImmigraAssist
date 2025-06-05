@@ -1,15 +1,15 @@
 {% extends "attorney_base.html" %}
 
-{% block title %}Attorney Login - ImmigraAssist{% endblock %}
+{% block title %}Admin Login - ImmigraAssist{% endblock %}
 
 {% block attorney_content %}
 <div class="login-container">
     <div class="card">
         <div class="card-header">
-            <h2>Attorney Login</h2>
+            <h2>Admin Login</h2>
         </div>
         <div class="card-body">
-            <form action="{{ url_for('attorney_login') }}" method="post" class="login-form">
+            <form action="{{ url_for('admin_login') }}" method="post" class="login-form">
                 <div class="form-group">
                     <label for="email">Email Address</label>
                     <input type="email" id="email" name="email" class="form-control" required>

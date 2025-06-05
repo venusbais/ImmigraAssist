@@ -1,4 +1,4 @@
-// Attorney Corner specific JavaScript
+// Admin Corner specific JavaScript
 
 // Initialize on document load
 document.addEventListener('DOMContentLoaded', function() {

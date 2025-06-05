@@ -188,7 +188,7 @@ window.immigraAPI.visa = {
                     'Review USCIS guidelines for next steps'
                 ] : [
                     'Submit missing documentation',
-                    'Consult with an immigration attorney',
+                    'Consult with an immigration admin',
                     'Reapply after addressing issues'
                 ]
             };

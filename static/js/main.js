@@ -1,4 +1,4 @@
-// Main JavaScript for Attorney AI website
+// Main JavaScript for Admin AI website
 
 // Wait for the DOM to be fully loaded
 document.addEventListener('DOMContentLoaded', function() {

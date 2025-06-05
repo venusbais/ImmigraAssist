@@ -1,6 +1,6 @@
 {% extends "attorney_base.html" %}
 
-{% block title %}Documents - Attorney Corner{% endblock %}
+{% block title %}Documents - Admin Corner{% endblock %}
 
 {% block attorney_content %}
 <div class="card">
@@ -59,7 +59,7 @@
                     <td>{{ document.client_name }}</td>
                     <td>
                         {% if document.case_id %}
-                        <a href="{{ url_for('attorney_petition_details', petition_id=document.case_id) }}">#{{ document.case_id }}</a>
+                        <a href="{{ url_for('admin_petition_details', petition_id=document.case_id) }}">#{{ document.case_id }}</a>
                         {% else %}
                         -
                         {% endif %}
@@ -111,7 +111,7 @@
                 <button class="close" data-dismiss="modal">&times;</button>
             </div>
             <div class="modal-body">
-                <form id="upload-document-form" method="post" action="{{ url_for('upload_attorney_document') }}" enctype="multipart/form-data">
+                <form id="upload-document-form" method="post" action="{{ url_for('upload_admin_document') }}" enctype="multipart/form-data">
                     <div class="form-group">
                         <label for="document-name">Document Name</label>
                         <input type="text" id="document-name" name="name" class="form-control" required>
@@ -275,7 +275,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             if (clientId) {
                 // Fetch cases for this client
-                fetch(`/attorney/get-client-cases/${clientId}`)
+                fetch(`/admin/get-client-cases/${clientId}`)
                     .then(response => response.json())
                     .then(data => {
                         if (data.success && data.cases) {
@@ -303,7 +303,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const documentId = this.getAttribute('data-document-id');
             
             if (confirm('Are you sure you want to delete this document? This action cannot be undone.')) {
-                fetch(`/attorney/delete-document/${documentId}`, {
+                fetch(`/admin/delete-document/${documentId}`, {
                     method: 'POST'
                 })
                 .then(response => response.json())

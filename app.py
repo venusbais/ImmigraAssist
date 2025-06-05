@@ -86,8 +86,8 @@ def get_document_icon(doc_type):
 def index():
     return render_template('index.html')
 
-@app.route('/attorney/login', methods=['GET', 'POST'])
-def attorney_login():
+@app.route('/admin/login', methods=['GET', 'POST'])
+def admin_login():
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -95,17 +95,17 @@ def attorney_login():
         # Query user by email
         user = User.query.filter_by(email=email).first()
 
-        if user and check_password_hash(user.password, password) and user.role == 'attorney':
+        if user and check_password_hash(user.password, password) and user.role == 'admin':
             session['logged_in'] = True
             session['user_id'] = user.id
-            session['is_attorney'] = True
-            session['attorney_name'] = f"{user.firstname} {user.lastname}"
+            session['is_admin'] = True
+            session['admin_name'] = f"{user.firstname} {user.lastname}"
             flash('Login successful!', 'success')
-            return redirect(url_for('attorney'))
+            return redirect(url_for('admin'))
         else:
             flash('Invalid email or password or insufficient permissions.', 'error')
 
-    return render_template('attorney_login.html')
+    return render_template('admin_login.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -137,11 +137,12 @@ def login():
             session['logged_in'] = True
             session['user_id'] = user.id
             session['email'] = email  # Store the user's email in the session for petition lookups
-            session['is_admin'] = user.role == 'admin'
-            session['is_attorney'] = user.role == 'attorney' or user.role == 'admin'  # Admin has attorney access
-            session['attorney_name'] = f"{user.firstname} {user.lastname}" if user.role == 'attorney' or user.role == 'admin' else ''
+            session['is_admin'] = user.role == 'admin' or user.role == 'Admin'  # Admin has admin access
+            session['is_attorney'] = user.role == 'attorney' or user.role == 'Attorney'  # Attorney role
+            session['admin_name'] = f"{user.firstname} {user.lastname}" if user.role == 'admin' or user.role == 'Admin' else ''
+            session['attorney_name'] = f"{user.firstname} {user.lastname}" if user.role == 'attorney' or user.role == 'Attorney' else ''
             flash('Logged in successfully!', 'success')
-            if user.role == 'admin' or user.role == 'attorney':
+            if user.role == 'Admin' or user.role == 'admin':
                 return redirect(url_for('attorney'))
             return redirect(url_for('index'))
         else:
@@ -217,45 +218,45 @@ def dashboard():
             # Get the current user's ID from session
             user_id = session.get('user_id')
             
-            # TEMPORARY SOLUTION FOR TESTING: Use admin user if no user is in session
+            # TEMPORARY SOLUTION FOR TESTING: Use Admin user if no user is in session
             if not user_id:
-                # Find admin user or create one if it doesn't exist
-                admin_user = User.query.filter_by(email='admin@example.com').first()
-                if not admin_user:
-                    print("Creating admin user for testing")
-                    admin_user = User(
+                # Find Admin user or create one if it doesn't exist
+                Admin_user = User.query.filter_by(email='Admin@example.com').first()
+                if not Admin_user:
+                    print("Creating Admin user for testing")
+                    Admin_user = User(
                         firstname='Admin',
                         lastname='User',
-                        email='admin@example.com',
+                        email='Admin@example.com',
                         phone='1234567890',
-                        password=generate_password_hash('admin123'),
-                        role='admin'
+                        password=generate_password_hash('Admin123'),
+                        role='Admin'
                     )
-                    db.session.add(admin_user)
+                    db.session.add(Admin_user)
                     db.session.commit()
                 
-                user_id = admin_user.id
-                print(f"Using admin user (id: {user_id}) for testing")
+                user_id = Admin_user.id
+                print(f"Using Admin user (id: {user_id}) for testing")
             else:
                 # Verify the user exists in the database
                 user = User.query.get(user_id)
                 if not user:
-                    # Find or create admin user as fallback
-                    admin_user = User.query.filter_by(email='admin@example.com').first()
-                    if not admin_user:
-                        admin_user = User(
+                    # Find or create Admin user as fallback
+                    Admin_user = User.query.filter_by(email='Admin@example.com').first()
+                    if not Admin_user:
+                        Admin_user = User(
                             firstname='Admin',
                             lastname='User',
-                            email='admin@example.com',
+                            email='Admin@example.com',
                             phone='1234567890',
-                            password=generate_password_hash('admin123'),
-                            role='admin'
+                            password=generate_password_hash('Admin123'),
+                            role='Admin'
                         )
-                        db.session.add(admin_user)
+                        db.session.add(Admin_user)
                         db.session.commit()
                     
-                    user_id = admin_user.id
-                    print(f"User not found, using admin user (id: {user_id}) for testing")
+                    user_id = Admin_user.id
+                    print(f"User not found, using Admin user (id: {user_id}) for testing")
                 else:
                     print(f"Processing form for user_id: {user_id}, user: {user.email}")
             
@@ -397,7 +398,7 @@ def attorney_i129_form(petition_id):
     
     if not petition:
         flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
+        return redirect(url_for('admin'))
     
     # Map the petition state to a user-friendly string
     state_display = {
@@ -419,7 +420,7 @@ def attorney_i140_form(petition_id):
     
     if not petition:
         flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
+        return redirect(url_for('admin'))
     
     # Map the petition state to a user-friendly string
     state_display = {
@@ -440,7 +441,7 @@ def update_i129_petition(petition_id):
     
     if not petition:
         flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
+        return redirect(url_for('admin'))
     
     # Update petition fields from form data
     # Company/Petitioner Information
@@ -514,7 +515,7 @@ def update_i140_petition(petition_id):
     
     if not petition:
         flash('Petition not found', 'error')
-        return redirect(url_for('attorney'))
+        return redirect(url_for('admin'))
     
     # Update petition fields from form data
     # Basic Information
@@ -588,7 +589,7 @@ def update_i140_petition(petition_id):
 @admin_required
 def admin():
     users = User.query.all()
-    return render_template('admin.html', users=users)
+    return render_template('Admin.html', users=users)
 
 @app.route('/delete_user/<int:user_id>', methods=['DELETE'])
 @login_required
@@ -607,7 +608,8 @@ def delete_user(user_id):
 @attorney_required
 def attorney():
     # Get all petitions with their associated users for the attorney dashboard
-    petitions = Petition.query.join(User, Petition.user_id == User.id).all()
+    # Sort by created_at in descending order (newest first)
+    petitions = Petition.query.join(User, Petition.user_id == User.id).order_by(Petition.created_at.desc()).all()
     
     # Add completion percentage and eligibility status for each petition
     for petition in petitions:
@@ -745,7 +747,7 @@ def attorney_add_feedback(petition_id):
         flash('Feedback cannot be empty', 'error')
     
     # Redirect back to the petition details page
-    return redirect(url_for('attorney_view_petition', petition_id=petition_id))
+    return redirect(url_for('attorney_review_petition', petition_id=petition_id))
 
 @app.route('/attorney/clients')
 @login_required
@@ -1015,6 +1017,377 @@ def petition_details(petition_id):
     }
     
     return render_template('petition_details.html', petition=petition)
+
+@app.route('/attorney/review-petition/<int:petition_id>')
+@login_required
+def attorney_review_petition(petition_id):
+    # Fetch petition data from database
+    petition_data = Petition.query.get_or_404(petition_id)
+    
+    # Get the user associated with this petition
+    user = User.query.get(petition_data.user_id) if petition_data.user_id else None
+    
+    # Format the petition data for the template
+    petition = {
+        'id': petition_data.id,
+        'first_name': petition_data.petitioner_given_name,
+        'last_name': petition_data.petitioner_family_name,
+        'email': petition_data.email,
+        'phone': petition_data.daytime_phone,
+        'submission_date': petition_data.created_at.strftime('%Y-%m-%d') if petition_data.created_at else 'N/A',
+        'form_type': 'I-129 Petition',  # Hardcoded for now, could be stored in a separate field
+        'completion_percentage': 85,  # Placeholder, would be calculated based on form completeness
+        'is_eligible': True,  # This would be determined by business logic
+        'state': petition_data.state or 'Under Review',
+        'admin_notes': '',
+        'has_mismatches': False,  # Will be updated based on field matches
+        'mismatch_fields': []  # Will store IDs of mismatched fields
+    }
+    
+    # Get form data from the petition_data JSON field
+    form_data = {}
+    if petition_data.form_data:
+        try:
+            import json
+            form_data = json.loads(petition_data.form_data)
+        except:
+            form_data = {}
+    
+    # Build form sections based on form type
+    petition['form_sections'] = []
+    
+    # Personal Information section
+    personal_info = {
+        'title': 'Personal Information',
+        'fields': [
+            {'id': 'name', 'label': 'Full Name', 'value': f"{petition['first_name']} {petition['last_name']}"},
+            {'id': 'email', 'label': 'Email', 'value': petition['email']},
+            {'id': 'phone', 'label': 'Phone', 'value': petition['phone']}
+        ]
+    }
+    
+    # Add additional fields from form_data
+    if form_data.get('personal_info'):
+        for key, value in form_data.get('personal_info', {}).items():
+            if key not in ['first_name', 'last_name', 'email', 'phone']:
+                personal_info['fields'].append({
+                    'id': key,
+                    'label': key.replace('_', ' ').title(),
+                    'value': value
+                })
+    
+    petition['form_sections'].append(personal_info)
+    
+    # Employment Details section (for I-140 and I-129)
+    if petition['form_type'] in ['I-140', 'I-129'] and form_data.get('employment'):
+        employment_info = {
+            'title': 'Employment Details',
+            'fields': []
+        }
+        
+        for key, value in form_data.get('employment', {}).items():
+            employment_info['fields'].append({
+                'id': key,
+                'label': key.replace('_', ' ').title(),
+                'value': value
+            })
+        
+        petition['form_sections'].append(employment_info)
+    
+    # Add other form sections based on form_data
+    for section_key, section_data in form_data.items():
+        if section_key not in ['personal_info', 'employment'] and isinstance(section_data, dict):
+            section = {
+                'title': section_key.replace('_', ' ').title(),
+                'fields': []
+            }
+            
+            for key, value in section_data.items():
+                section['fields'].append({
+                    'id': key,
+                    'label': key.replace('_', ' ').title(),
+                    'value': value
+                })
+            
+            petition['form_sections'].append(section)
+    
+    # Get documents associated with this petition
+    # In a real app, you would query the database for documents
+    # For now, we'll create sample documents
+    petition['documents'] = [
+        {
+            'id': 1,
+            'name': 'Passport.pdf',
+            'type': 'Identification',
+            'icon': 'fa-passport',
+            'upload_date': '2023-05-10'
+        },
+        {
+            'id': 2,
+            'name': 'Resume.pdf',
+            'type': 'Professional',
+            'icon': 'fa-file-alt',
+            'upload_date': '2023-05-10'
+        },
+        {
+            'id': 3,
+            'name': 'Birth_Certificate.pdf',
+            'type': 'Identification',
+            'icon': 'fa-id-card',
+            'upload_date': '2023-05-12'
+        },
+        {
+            'id': 4,
+            'name': 'Employment_Letter.pdf',
+            'type': 'Employment',
+            'icon': 'fa-file-contract',
+            'upload_date': '2023-05-15'
+        }
+    ]
+    
+    # Get feedback history for this petition
+    # In a real app, you would query the database for feedback entries
+    petition['feedback_history'] = []
+    if petition_data.feedback:
+        try:
+            feedback_list = json.loads(petition_data.feedback)
+            for feedback in feedback_list:
+                petition['feedback_history'].append({
+                    'date': feedback.get('date', 'N/A'),
+                    'admin': feedback.get('admin', 'Unknown'),
+                    'content': feedback.get('content', '')
+                })
+        except:
+            pass
+    
+    # Field Matching Details
+    # This would normally be determined by comparing form data with document data
+    # For now, we'll create sample field matches
+    petition['field_matches'] = [
+        {
+            'field_name': 'Full Name',
+            'matches': True,
+            'form_value': f"{petition_data.petitioner_given_name} {petition_data.petitioner_family_name}",
+            'doc_value': f"{petition_data.petitioner_given_name} {petition_data.petitioner_family_name}"
+        },
+        {
+            'field_name': 'Date of Birth',
+            'matches': True,
+            'form_value': petition_data.birth_date.strftime('%Y-%m-%d') if hasattr(petition_data, 'birth_date') and petition_data.birth_date else 'N/A',
+            'doc_value': petition_data.birth_date.strftime('%Y-%m-%d') if hasattr(petition_data, 'birth_date') and petition_data.birth_date else 'N/A'
+        },
+        {
+            'field_name': 'Passport Number',
+            'matches': True,
+            'form_value': petition_data.passport_number if hasattr(petition_data, 'passport_number') else 'N/A',
+            'doc_value': petition_data.passport_number if hasattr(petition_data, 'passport_number') else 'N/A'
+        },
+        {
+            'field_name': 'Country of Birth',
+            'matches': False,
+            'form_value': petition_data.country_of_birth if hasattr(petition_data, 'country_of_birth') else 'United States',
+            'doc_value': 'Canada'
+        },
+        {
+            'field_name': 'Alien Registration Number',
+            'matches': False,
+            'form_value': petition_data.alien_number if hasattr(petition_data, 'alien_number') else 'A123456789',
+            'doc_value': 'A987654321'
+        }
+    ]
+    
+    # Update has_mismatches flag based on field matches
+    for field_match in petition['field_matches']:
+        if not field_match['matches']:
+            petition['has_mismatches'] = True
+            petition['mismatch_fields'].append(field_match['field_name'].lower().replace(' ', '_'))
+    
+    return render_template('attorney_review_form.html', petition=petition, state=petition['state'])
+
+@app.route('/attorney/update-petition-status/<int:petition_id>', methods=['POST'])
+@login_required
+def attorney_update_petition_status(petition_id):
+    # Get the petition from the database
+    petition = Petition.query.get_or_404(petition_id)
+    
+    if request.method == 'POST':
+        status = request.form.get('status', '')
+        notes = request.form.get('notes', '')
+        
+        # Validate inputs
+        if not status:
+            flash('Status is required', 'error')
+            return redirect(url_for('attorney_review_petition', petition_id=petition_id))
+        
+        # Update the petition status in the database
+        petition.state = status
+        
+        # Add notes if provided
+        if notes:
+            petition.admin_notes = notes
+        
+        # Add to feedback history
+        import json
+        from datetime import datetime
+        
+        # Get current attorney name from session
+        attorney_name = session.get('attorney_name', session.get('admin_name', 'Unknown Attorney'))
+        
+        # Create new feedback entry
+        new_feedback = {
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'admin': attorney_name,
+            'content': notes if notes else f'Status updated to {status}'
+        }
+        
+        # Update feedback history in the petition
+        feedback_list = []
+        if petition.feedback:
+            try:
+                feedback_list = json.loads(petition.feedback)
+                if not isinstance(feedback_list, list):
+                    feedback_list = []
+            except:
+                feedback_list = []
+        
+        feedback_list.append(new_feedback)
+        petition.feedback = json.dumps(feedback_list)
+        
+        # Save changes to database
+        db.session.commit()
+        
+        # Log the action
+        print(f"Petition {petition_id} status updated to {status} by attorney {attorney_name}")
+        print(f"Notes: {notes}")
+        
+        flash(f'Petition status updated to {status}', 'success')
+        return redirect(url_for('attorney'))
+
+@app.route('/attorney/save-feedback/<int:petition_id>', methods=['POST'])
+@login_required
+def attorney_save_feedback(petition_id):
+    # Get the petition from the database
+    petition = Petition.query.get_or_404(petition_id)
+    
+    if request.method == 'POST':
+        notes = request.form.get('notes', '')
+        
+        # Validate inputs
+        if not notes:
+            flash('Feedback content is required', 'error')
+            return redirect(url_for('attorney_review_petition', petition_id=petition_id))
+        
+        # Add to feedback history
+        import json
+        from datetime import datetime
+        
+        # Get current attorney name from session
+        attorney_name = session.get('attorney_name', session.get('admin_name', 'Unknown Attorney'))
+        
+        # Create new feedback entry
+        new_feedback = {
+            'date': datetime.now().strftime('%Y-%m-%d'),
+            'admin': attorney_name,
+            'content': notes
+        }
+        
+        # Update feedback history in the petition
+        feedback_list = []
+        if petition.feedback:
+            try:
+                feedback_list = json.loads(petition.feedback)
+                if not isinstance(feedback_list, list):
+                    feedback_list = []
+            except:
+                feedback_list = []
+        
+        feedback_list.append(new_feedback)
+        petition.feedback = json.dumps(feedback_list)
+        
+        # Save changes to database
+        db.session.commit()
+        
+        # Log the action
+        print(f"Feedback added to petition {petition_id} by attorney {attorney_name}")
+        print(f"Feedback: {notes}")
+        
+        flash('Feedback saved successfully', 'success')
+        return redirect(url_for('attorney_review_petition', petition_id=petition_id))
+
+@app.route('/user/dashboard')
+@login_required
+def user_dashboard():
+    # Get the current user's petitions
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please log in to view your dashboard', 'error')
+        return redirect(url_for('login'))
+    
+    # Query all petitions for this user
+    user_petitions = Petition.query.filter_by(user_id=user_id).all()
+    
+    return render_template('dashboard.html', user_petitions=user_petitions)
+
+@app.route('/user/petitions')
+@login_required
+def user_petitions():
+    # Get the current user's petitions
+    user_id = session.get('user_id')
+    if not user_id:
+        flash('Please log in to view your petitions', 'error')
+        return redirect(url_for('login'))
+    
+    # Query all petitions for this user
+    user_petitions = Petition.query.filter_by(user_id=user_id).all()
+    
+    # Get current time for the last updated timestamp
+    now = datetime.now()
+    
+    return render_template('my_petitions.html', user_petitions=user_petitions, now=now)
+
+@app.route('/user/petition/<int:petition_id>')
+@login_required
+def user_view_petition(petition_id):
+    # Get the petition from the database
+    petition_data = Petition.query.get_or_404(petition_id)
+    
+    # Make sure the user owns this petition
+    if petition_data.user_id != session.get('user_id'):
+        flash('You do not have permission to view this petition', 'error')
+        return redirect(url_for('dashboard'))
+    
+    # Format the petition data for the template
+    petition = {
+        'id': petition_data.id,
+        'first_name': petition_data.petitioner_given_name,
+        'last_name': petition_data.petitioner_family_name,
+        'email': petition_data.email,
+        'phone': petition_data.daytime_phone,
+        'submission_date': petition_data.created_at.strftime('%Y-%m-%d') if petition_data.created_at else 'N/A',
+        'form_type': 'I-129 Petition',  # Hardcoded for now
+        'status': petition_data.state or 'Under Review',
+        'completion_percentage': 85,  # Placeholder
+        'admin_notes': petition_data.admin_notes or ''
+    }
+    
+    # Get feedback history for this petition
+    petition['feedback_history'] = []
+    if petition_data.feedback:
+        try:
+            import json
+            feedback_list = json.loads(petition_data.feedback)
+            for feedback in feedback_list:
+                petition['feedback_history'].append({
+                    'date': feedback.get('date', 'N/A'),
+                    'admin': feedback.get('admin', 'Unknown'),
+                    'content': feedback.get('content', '')
+                })
+        except:
+            pass
+    
+    return render_template('user_petition_view.html', petition=petition)
+    
+    return redirect(url_for('attorney_review_petition', petition_id=petition_id))
 
 @app.route('/attorney/calendar')
 @login_required
@@ -1698,32 +2071,32 @@ def get_user_petition():
 if __name__ == '__main__':
     with app.app_context():
         db.create_all()
+        # Create Admin user if it doesn't exist
+        Admin_user = User.query.filter_by(email='Admin@example.com').first()
+        if not Admin_user:
+            Admin = User(
+                firstname='Admin',
+                lastname='User',
+                email='Admin@example.com',
+                phone='1234567890',
+                password=generate_password_hash('Admin123'),
+                role='Admin'
+            )
+            db.session.add(Admin)
+            db.session.commit()
+            
         # Create admin user if it doesn't exist
         admin_user = User.query.filter_by(email='admin@example.com').first()
         if not admin_user:
             admin = User(
-                firstname='Admin',
-                lastname='User',
+                firstname='Jane',
+                lastname='Admin',
                 email='admin@example.com',
-                phone='1234567890',
+                phone='9876543210',
                 password=generate_password_hash('admin123'),
                 role='admin'
             )
             db.session.add(admin)
-            db.session.commit()
-            
-        # Create attorney user if it doesn't exist
-        attorney_user = User.query.filter_by(email='attorney@example.com').first()
-        if not attorney_user:
-            attorney = User(
-                firstname='Jane',
-                lastname='Attorney',
-                email='attorney@example.com',
-                phone='9876543210',
-                password=generate_password_hash('attorney123'),
-                role='attorney'
-            )
-            db.session.add(attorney)
             db.session.commit()
             
     app.run(debug=True)
